@@ -7,6 +7,10 @@
 #define No cout << "No" << '\n';
 #define Yes cout << "Yes" << '\n';
 #define NOO cout << -1 << '\n';
+#define all(x) (x).begin() , (x).end()
+#define ALL(X) (X).begin() + 1 , (X).end()
+#define rall(x) (x).rbegin() , (x).end()
+#define RALL(X) (X).rbegin() , (X).end() - 1
 #define fs first
 #define sc second
 #define int long long
