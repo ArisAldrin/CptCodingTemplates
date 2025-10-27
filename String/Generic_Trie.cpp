@@ -13,7 +13,6 @@
 #define RALL(X) (X).rbegin() , (X).end() - 1
 #define fs first
 #define sc second
-#define arr array
 #define int long long
 
 using namespace std;
@@ -33,6 +32,14 @@ const ll MOD = 998244353;
 const db EPS = 1e-10;
 mt19937 rdint(time(0));
 mt19937_64 rdll(time(0));
+
+class TrieNode{
+public:
+    unordered_map<char , TrieNode *>child;
+    // map<char , TrieNode *>child;
+    int c , cpre;
+    
+};
 
 void solve(){
     
