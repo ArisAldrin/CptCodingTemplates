@@ -31,6 +31,7 @@ const ll INF = 1e18;
 const ll NIL = -INF;
 const ll MOD = 998244353;
 const db EPS = 1e-10;
+const db PI = acos(-1);
 mt19937 rdint(time(0));
 mt19937_64 rdll(time(0));
 
@@ -41,6 +42,7 @@ void solve(){
 signed main(){
     ios::sync_with_stdio(0);
     cin.tie(0); cout.tie(0);
+    cout << fixed << setprecision(10);
     int t;cin >> t;
     while(t --)
     solve();
