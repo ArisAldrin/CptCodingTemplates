@@ -42,7 +42,7 @@ private:
 
     BigInt abs_sub(const BigInt& b) const {
         BigInt res = *this;
-        for(int i=0, brw=0;i < b.a.size() || brw;i++){
+        for(int i = 0, brw = 0; i < res.a.size(); i++){
             res.a[i] -= (i < b.a.size() ? b.a[i] : 0) + brw;
             brw = (res.a[i] < 0);
             if (brw) res.a[i] += BASE;
@@ -117,8 +117,8 @@ public:
     // <<<<<<<<<<<<<<<<<<<<<< 比较运算符 >>>>>>>>>>>>>>>>>>>>>>
     bool operator<(const BigInt& b) const {
         if(sign != b.sign) return sign;
-        if(!sign) return abs_less(b);
-        return !abs_less(b) && *this != b;
+        if(!sign) return abs_less(b); 
+        return b.abs_less(*this);
     }
     bool operator>(const BigInt& b) const { return b < *this; }
     bool operator<=(const BigInt& b) const { return !(*this > b); }
