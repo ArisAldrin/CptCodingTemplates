@@ -91,6 +91,28 @@ private:
         return q;
     }
 
+    BigInt abs_div_small(int d) const {
+        BigInt res;
+        res.a.clear();
+        ll rem = 0; 
+        for(int i=a.size() - 1;i>=0;--i){
+            ll cur = rem * BASE + a[i];
+            res.a.push_back(cur / d);
+            rem = cur % d;
+        }
+        reverse(res.a.begin(), res.a.end());
+        res.trim();
+        return res;
+    }
+    int get_rem_small(int d) const {
+        ll rem = 0;
+        for (int i = a.size() - 1; i >= 0; --i) {
+            ll cur = rem * BASE + a[i];
+            rem = cur % d;
+        }
+        return (int)rem;
+    }
+
 public:
     BigInt(ll x = 0) : sign(false){
         if(x < 0) sign = true, x = -x;
@@ -187,6 +209,18 @@ public:
         return r;
     }
 
+    BigInt operator/(int d) const {
+        BigInt abs_res = abs_div_small(d);
+        abs_res.sign = (abs_res.a.size() != 1 || abs_res.a[0] != 0) && sign;
+        return abs_res;
+    }
+
+    BigInt operator%(int d) const {
+        int rem = get_rem_small(d);
+        BigInt res(rem);
+        res.sign = (rem != 0) && sign;
+        return res;
+    }
     // <<<<<<<<<<<<<<<<<<<<<< 输入输出 >>>>>>>>>>>>>>>>>>>>>>>
     friend istream& operator>>(istream& is, BigInt& n){
         string s;
