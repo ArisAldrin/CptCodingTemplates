@@ -53,28 +53,37 @@ private:
 
     // 无符号带余数（通过r传出）除法 ： 除法/取模的依赖 ，同时它依赖乘法重载
     BigInt abs_mod_div(const BigInt& b, BigInt& r) const {
+        if (b.a.size() == 1 && b.a[0] == 0) {
+            r = *this;
+            return BigInt(0); 
+        }
         BigInt q(0);
         r = *this;
-        if(r.abs_less(b)) return q; 
-        
+        if(abs_less(b)) {
+            r.sign = false;
+            return q;
+        } 
         BigInt tmpr = *this;
         q.a.resize(a.size() - b.a.size() + 1);
-        
-        for(int i=a.size() - b.a.size();i>=0;--i){
-            ll low = 0, high = BASE, ansq = 0;
-            
+        BigInt cpb = b; 
+        cpb.sign = false; 
+        for(int i = a.size() - b.a.size(); i >= 0; --i){
+            BigInt sfd = cpb;
+            sfd.a.insert(sfd.a.begin(), i, 0); 
+            ll low = 0, high = BASE - 1, ansq = 0;
             while(low <= high){
                 ll mid = low + (high - low) / 2;
-                BigInt tmpp = b.abs_add(BigInt(0)) * BigInt(mid);
-                if(!tmpr.abs_less(tmpp)){
+                BigInt P = sfd * BigInt(mid); 
+                if(!tmpr.abs_less(P)){
                     ansq = mid;
                     low = mid + 1;
                 }else{
                     high = mid - 1;
                 }
             }
-            q.a[i] = ansq;
-            tmpr = tmpr.abs_sub(b.abs_add(BigInt(0)) * BigInt(ansq));
+            q.a[i] = (int)ansq;   
+            BigInt fnp = sfd * BigInt(ansq); 
+            tmpr = tmpr.abs_sub(fnp);
         }
         q.trim();
         r = tmpr;
