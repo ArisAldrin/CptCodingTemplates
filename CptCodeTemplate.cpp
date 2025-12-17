@@ -34,7 +34,7 @@ mt19937 rdint(time(0));
 mt19937_64 rdll(time(0));
 
 void solve(){
-
+    
 }
 
 signed main(){
