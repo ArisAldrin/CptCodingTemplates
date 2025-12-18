@@ -20,6 +20,7 @@ using namespace std;
 using ull = unsigned long long;
 using db = double;
 using pii = pair<int , int>;
+using piii = tuple<int , int , int>;
 using pdd = pair<db , db>;
 using i128 = __int128_t;
 
