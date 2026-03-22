@@ -6,7 +6,7 @@ using namespace std;
 using pii = pair<int , int>;
 
 int n , q;
-vector<vector<int> >g;
+vector<vector<int> >g1;
 vector<vector<pii> >qry;
 vector<int>fa , ans;
 vector<bool>vis;
@@ -18,7 +18,7 @@ int find(int x){
 
 void dfs(int u){
     vis[u] = true;
-    for(auto v:g[u]){
+    for(auto v:g1[u]){
         if(!vis[v]){
             dfs(v);
             fa[v] = u;
@@ -32,12 +32,12 @@ void dfs(int u){
 
 signed main(){
     cin >> n >> q;
-    g.assign(n + 1 , vector<int>());
+    g1.assign(n + 1 , vector<int>());
     qry.assign(n + 1  , vector<pii>());
     for(int i=1;i<=n - 1;++i){
         int u , v;cin >> u >> v;
-        g[u].push_back(v);
-        g[v].push_back(u);
+        g1[u].push_back(v);
+        g1[v].push_back(u);
     }
     for(int i=1;i<=q;++i){
         int u , v;cin >> u >> v;

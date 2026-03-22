@@ -1,40 +1,72 @@
 #include<bits/stdc++.h>
-#define int long long
 using namespace std;
-using ll = long long;
 
-class BigInt{
+const int MOD = 998244353;
+const int G = 3;
+const int Gi = 332748118;
+
+int qpow(int a, int b) {
+    int res = 1; a %= MOD;
+    while (b) {
+        if (b & 1) res = res * a % MOD;
+        a = a * a % MOD;
+        b >>= 1;
+    }
+    return res;
+}
+
+void ntt(vector<int>& a, int n, int type) {
+    static vector<int> r;
+    if (r.size() != n) {
+        r.resize(n);
+        for (int i = 0; i < n; i++) r[i] = (r[i >> 1] >> 1) | ((i & 1) ? (n >> 1) : 0);
+    }
+    for (int i = 0; i < n; i++) if (i < r[i]) swap(a[i], a[r[i]]);
+    for (int mid = 1; mid < n; mid <<= 1) {
+        int wn = qpow(type == 1 ? G : Gi, (MOD - 1) / (mid << 1));
+        for (int j = 0; j < n; j += (mid << 1)) {
+            int w = 1;
+            for (int k = 0; k < mid; k++, w = w * wn % MOD) {
+                int x = a[j + k], y = w * a[j + mid + k] % MOD;
+                a[j + k] = (x + y) % MOD;
+                a[j + mid + k] = (x - y + MOD) % MOD;
+            }
+        }
+    }
+    if (type == -1) {
+        int inv = qpow(n, MOD - 2);
+        for (int i = 0; i < n; i++) a[i] = a[i] * inv % MOD;
+    }
+}
+
+class BigInt {
 private:
     static const int BASE = 100000000;
     static const int WIDTH = 8;
-    vector<int>a;
+    vector<int> a;
     bool sign;
 
-    // 去除前导零 : 许多东西的依赖
     void trim() {
-        while(a.size() > 1 && a.back() == 0) a.pop_back();
-        if(a.size() == 1 && a[0] == 0) sign = false;
+        while (a.size() > 1 && a.back() == 0) a.pop_back();
+        if (a.empty()) a.push_back(0);
+        if (a.size() == 1 && a[0] == 0) sign = false;
     }
 
-    // 无符号比较 : 许多东西的依赖
     bool abs_less(const BigInt& b) const {
-        if(a.size() != b.a.size()) return a.size() < b.a.size();
-        for(int i=a.size() - 1;i>=0;i--){
-            if(a[i] != b.a[i]) return a[i] < b.a[i];
-        }
+        if (a.size() != b.a.size()) return a.size() < b.a.size();
+        for (int i = a.size() - 1; i >= 0; i--)
+            if (a[i] != b.a[i]) return a[i] < b.a[i];
         return false;
     }
-    
-    // 无符号加减法 : 加减法 , 无符号带余数除法的依赖
+
     BigInt abs_add(const BigInt& b) const {
-        BigInt res;
-        res.a.clear();
-        int cry = 0;
-        for(int i=0;i<a.size() || i < b.a.size() || cry;i++){
-            if(i < a.size()) cry += a[i];
-            if(i < b.a.size()) cry += b.a[i];
-            res.a.push_back(cry % BASE);
-            cry /= BASE;
+        BigInt res; res.a.clear();
+        int c = 0;
+        for (int i = 0; i < max(a.size(), b.a.size()) || c; i++) {
+            if (i < a.size()) c += a[i];
+            if (i < b.a.size()) c += b.a[i];
+            res.a.push_back(c % BASE);
+            c /= BASE;
         }
         res.trim();
         return res;
@@ -42,7 +74,7 @@ private:
 
     BigInt abs_sub(const BigInt& b) const {
         BigInt res = *this;
-        for(int i = 0, brw = 0; i < res.a.size(); i++){
+        for (int i = 0, brw = 0; i < res.a.size(); i++) {
             res.a[i] -= (i < b.a.size() ? b.a[i] : 0) + brw;
             brw = (res.a[i] < 0);
             if (brw) res.a[i] += BASE;
@@ -51,96 +83,47 @@ private:
         return res;
     }
 
-    // 无符号带余数（通过r传出）除法 ： 除法/取模的依赖 ，同时它依赖乘法重载
     BigInt abs_mod_div(const BigInt& b, BigInt& r) const {
-        if (b.a.size() == 1 && b.a[0] == 0) {
-            r = *this;
-            return BigInt(0); 
-        }
-        BigInt q(0);
-        r = *this;
-        if(abs_less(b)) {
-            r.sign = false;
-            return q;
-        } 
-        BigInt tmpr = *this;
+        if (b.a.size() == 1 && b.a[0] == 0) { r = *this; return BigInt(0); }
+        BigInt q(0); r = *this;
+        if (abs_less(b)) { r.sign = false; return q; }
         q.a.resize(a.size() - b.a.size() + 1);
-        BigInt cpb = b; 
-        cpb.sign = false; 
-        for(int i = a.size() - b.a.size(); i >= 0; --i){
-            BigInt sfd = cpb;
-            sfd.a.insert(sfd.a.begin(), i, 0); 
-            ll low = 0, high = BASE - 1, ansq = 0;
-            while(low <= high){
-                ll mid = low + (high - low) / 2;
-                BigInt P = sfd * BigInt(mid); 
-                if(!tmpr.abs_less(P)){
-                    ansq = mid;
-                    low = mid + 1;
-                }else{
-                    high = mid - 1;
-                }
+        for (int i = a.size() - b.a.size(); i >= 0; i--) {
+            BigInt sfd = b;
+            sfd.a.insert(sfd.a.begin(), i, 0);
+            int low = 0, high = BASE - 1, ansq = 0;
+            while (low <= high) {
+                int mid = low + (high - low) / 2;
+                if (!r.abs_less(sfd * BigInt(mid))) { ansq = mid; low = mid + 1; }
+                else high = mid - 1;
             }
-            q.a[i] = (int)ansq;   
-            BigInt fnp = sfd * BigInt(ansq); 
-            tmpr = tmpr.abs_sub(fnp);
+            q.a[i] = ansq;
+            r = r.abs_sub(sfd * BigInt(ansq));
         }
-        q.trim();
-        r = tmpr;
-        r.sign = false;
+        q.trim(); r.trim(); r.sign = false;
         return q;
     }
 
-    BigInt abs_div_small(int d) const {
-        BigInt res;
-        res.a.clear();
-        ll rem = 0; 
-        for(int i=a.size() - 1;i>=0;--i){
-            ll cur = rem * BASE + a[i];
-            res.a.push_back(cur / d);
-            rem = cur % d;
-        }
-        reverse(res.a.begin(), res.a.end());
-        res.trim();
-        return res;
-    }
-    int get_rem_small(int d) const {
-        ll rem = 0;
-        for (int i = a.size() - 1; i >= 0; --i) {
-            ll cur = rem * BASE + a[i];
-            rem = cur % d;
-        }
-        return (int)rem;
-    }
-
 public:
-    BigInt(ll x = 0) : sign(false){
-        if(x < 0) sign = true, x = -x;
-        if(x == 0) a.push_back(0);
-        else while(x > 0){
-            a.push_back(x % BASE);
-            x /= BASE;
+    BigInt(int x = 0) : sign(x < 0) {
+        x = abs(x);
+        if (x == 0) a.push_back(0);
+        while (x > 0) { a.push_back(x % BASE); x /= BASE; }
+        trim();
+    }
+    BigInt(const string& s) : sign(false) {
+        int st = (s[0] == '-' ? 1 : 0);
+        if (s[0] == '-') sign = true;
+        for (int i = s.length(); i > st; i -= WIDTH) {
+            if (i - WIDTH < st) a.push_back(stoll(s.substr(st, i - st)));
+            else a.push_back(stoll(s.substr(i - WIDTH, WIDTH)));
         }
         trim();
     }
 
-    BigInt(const string& s) : sign(false){
-        int st = 0;
-        if(s[0] == '-') sign = true, st = 1;
-        
-        for(int i=s.length();i>st;i-=WIDTH){
-            if(i - WIDTH < st) a.push_back(stoi(s.substr(st, i - st)));
-            else a.push_back(stoi(s.substr(i - WIDTH, WIDTH)));
-        }
-        if(s.length() == st) a.push_back(0);
-        trim();
-    }
-
-    // <<<<<<<<<<<<<<<<<<<<<< 比较运算符 >>>>>>>>>>>>>>>>>>>>>>
     bool operator<(const BigInt& b) const {
-        if(sign != b.sign) return sign;
-        if(!sign) return abs_less(b); 
-        return b.abs_less(*this);
+        if (sign != b.sign) return sign;
+        return sign ? b.abs_less(*this) : abs_less(b);
     }
     bool operator>(const BigInt& b) const { return b < *this; }
     bool operator<=(const BigInt& b) const { return !(*this > b); }
@@ -148,93 +131,73 @@ public:
     bool operator==(const BigInt& b) const { return sign == b.sign && a == b.a; }
     bool operator!=(const BigInt& b) const { return !(*this == b); }
 
-    // +++++++++++++++++++++++++ 加法 +++++++++++++++++++++++++
     BigInt operator+(const BigInt& b) const {
-        if(sign == b.sign){
-            BigInt res = abs_add(b);
-            res.sign = sign;
-            return res;
-        }else{
-            if(abs_less(b)){
-                BigInt tmp = b.abs_sub(*this);
-                tmp.sign = b.sign;
-                return tmp;
-            }else{
-                BigInt tmp = abs_sub(b);
-                tmp.sign = sign;
-                return tmp;
-            }
-        }
+        if (sign == b.sign) { BigInt res = abs_add(b); res.sign = sign; return res; }
+        if (abs_less(b)) { BigInt res = b.abs_sub(*this); res.sign = b.sign; return res; }
+        BigInt res = abs_sub(b); res.sign = sign; return res;
     }
-
-    // ---------------------- 减法(依赖加法) ----------------------
     BigInt operator-(const BigInt& b) const {
-        BigInt tmp = b;
-        tmp.sign = !b.sign;
-        return *this + tmp;
+        BigInt t = b; t.sign = !b.sign; return *this + t;
     }
 
-    // ********************** 乘法 **********************
     BigInt operator*(const BigInt& b) const {
-        BigInt res;
-        res.a.assign(a.size() + b.a.size(), 0);
-        for(int i=0;i<a.size();++i){
-            ll cry = 0;
-            for(int j=0;j<b.a.size() || cry;++j){
-                ll cur = res.a[i + j] + cry;
-                if(j < b.a.size()) cur += (ll)a[i] * b.a[j];
-                res.a[i + j] = cur % BASE;
-                cry = cur / BASE;
+        if ((a.size() == 1 && a[0] == 0) || (b.a.size() == 1 && b.a[0] == 0)) return BigInt(0);
+        if (a.size() + b.a.size() < 64) {
+            BigInt res; res.a.assign(a.size() + b.a.size(), 0);
+            for (int i = 0; i < a.size(); i++) {
+                int c = 0;
+                for (int j = 0; j < b.a.size() || c; j++) {
+                    int cur = res.a[i + j] + c + (j < b.a.size() ? a[i] * b.a[j] : 0);
+                    res.a[i + j] = cur % BASE; c = cur / BASE;
+                }
             }
+            res.sign = sign != b.sign; res.trim(); return res;
         }
-        res.trim();
-        res.sign = (res.a.size() != 1 || res.a[0] != 0) && (sign != b.sign);
-        return res;
+        vector<int> va, vb;
+        for (int x : a) { for (int i = 0; i < WIDTH; i++) { va.push_back(x % 10); x /= 10; } }
+        for (int x : b.a) { for (int i = 0; i < WIDTH; i++) { vb.push_back(x % 10); x /= 10; } }
+        int n = 1, m = va.size() + vb.size() - 1;
+        while (n <= m) n <<= 1;
+        va.resize(n); vb.resize(n);
+        ntt(va, n, 1); ntt(vb, n, 1);
+        for (int i = 0; i < n; i++) va[i] = va[i] * vb[i] % MOD;
+        ntt(va, n, -1);
+        BigInt res; res.a.clear();
+        int c = 0;
+        for (int i = 0; i < m || c; i++) {
+            if (i < m) c += va[i];
+            res.a.push_back(c % 10); c /= 10;
+        }
+        string s = ""; if (sign != b.sign) s += '-';
+        for (int i = res.a.size() - 1; i >= 0; i--) s += (char)(res.a[i] + '0');
+        return BigInt(s);
     }
 
-    // ////////////////////// 除法 //////////////////////
     BigInt operator/(const BigInt& b) const {
-        BigInt r;
-        BigInt q = abs_mod_div(b, r);
-        bool signres = (q.a.size() != 1 || q.a[0] != 0) && (sign != b.sign);
-        q.sign = signres;
+        BigInt r; BigInt q = abs_mod_div(b, r);
+        q.sign = (q.a.size() > 1 || q.a[0] > 0) && (sign != b.sign);
         return q;
     }
-
     BigInt operator%(const BigInt& b) const {
-        BigInt r;
-        abs_mod_div(b, r);
-        bool signres = (r.a.size() != 1 || r.a[0] != 0) && sign;
-        r.sign = signres;
+        BigInt r; abs_mod_div(b, r);
+        r.sign = (r.a.size() > 1 || r.a[0] > 0) && sign;
         return r;
     }
 
-    BigInt operator/(int d) const {
-        BigInt abs_res = abs_div_small(d);
-        abs_res.sign = (abs_res.a.size() != 1 || abs_res.a[0] != 0) && sign;
-        return abs_res;
+    friend istream& operator>>(istream& is, BigInt& n) {
+        string s; if (!(is >> s)) return is;
+        n = BigInt(s); return is;
     }
-
-    BigInt operator%(int d) const {
-        int rem = get_rem_small(d);
-        BigInt res(rem);
-        res.sign = (rem != 0) && sign;
-        return res;
-    }
-    // <<<<<<<<<<<<<<<<<<<<<< 输入输出 >>>>>>>>>>>>>>>>>>>>>>>
-    friend istream& operator>>(istream& is, BigInt& n){
-        string s;
-        is >> s;
-        n = BigInt(s);
-        return is;
-    }
-    friend ostream& operator<<(ostream& os, const BigInt& n){
-        if(n.a.empty() || (n.a.size() == 1 && n.a[0] == 0)) return os << 0;
-        if(n.sign) os << '-';
+    friend ostream& operator<<(ostream& os, const BigInt& n) {
+        if (n.sign) os << '-';
         os << n.a.back();
-        for(int i=n.a.size() - 2;i>=0;--i){
-            os << setfill('0') << setw(WIDTH) << n.a[i];
-        }
+        for (int i = n.a.size() - 2; i >= 0; i--) os << setfill('0') << setw(WIDTH) << n.a[i];
         return os;
     }
 };
+
+signed main() {
+    BigInt a,b;cin >> a >> b;
+    cout << a * b << '\n';
+    return 0;
+}
