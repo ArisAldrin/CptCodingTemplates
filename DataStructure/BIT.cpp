@@ -24,7 +24,7 @@ public:
     }
 };
 
-class Complete_BIT{
+class CompleteBIT{
 private:
     int n;
     BIT tr1 , tr2;
@@ -34,8 +34,8 @@ private:
         tr2.add(id , x * id);
     }
 public:
-    Complete_BIT(int n) : tr1(n) , tr2(n) , n(n){}
-    Complete_BIT(vector<int>& a) : n(a.size() - 1) , tr1(n) , tr2(n){ for(int i=1;i<=n;++i)addrg(i , i , a[i]); }
+    CompleteBIT(int n) : tr1(n) , tr2(n) , n(n){}
+    CompleteBIT(vector<int>& a) : n(a.size() - 1) , tr1(n) , tr2(n){ for(int i=1;i<=n;++i)addrg(i , i , a[i]); }
     
     void addrg(int l , int r , int x){
         add(l , x) , add(r + 1 , -x);
