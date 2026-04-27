@@ -13,6 +13,7 @@ public:
         n = a.size() - 1;
         for(int i=1;i<=n;++i)add(i , a[i]);
     }
+    BIT(int sz) : n(sz) , tr(sz + 1 , 0) {}
     void add(int id , int x){
         while(id <= n)tr[id] += x , id += lowbit(id);
     }
@@ -20,5 +21,31 @@ public:
         int res = 0;
         while(id)res += tr[id] , id -= lowbit(id);
         return res;
+    }
+};
+
+class Complete_BIT{
+private:
+    int n;
+    BIT tr1 , tr2;
+    int lowbit(int x){ return x & -x; }
+    void add(int id , int x){
+        tr1.add(id , x);
+        tr2.add(id , x * id);
+    }
+public:
+    Complete_BIT(int n) : tr1(n) , tr2(n) , n(n){}
+    Complete_BIT(vector<int>& a) : n(a.size() - 1) , tr1(n) , tr2(n){ for(int i=1;i<=n;++i)addrg(i , i , a[i]); }
+    
+    void addrg(int l , int r , int x){
+        add(l , x) , add(r + 1 , -x);
+    }
+
+    int askpre(int id){
+        return (id + 1) * tr1.askpre(id) - tr2.askpre(id);
+    }
+
+    int askrg(int l , int r){
+        return askpre(r) - askpre(l - 1);
     }
 };

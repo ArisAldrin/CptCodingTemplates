@@ -5,8 +5,7 @@
 using namespace std;
 
 vector<vector<int> > g;
-vector<int>res;
-vector<int>cond;
+vector<int>res , cond;
 bool cyc = false;
 
 void dfs(int now){
