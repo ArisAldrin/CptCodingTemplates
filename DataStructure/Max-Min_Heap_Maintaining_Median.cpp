@@ -2,7 +2,7 @@
 #define int long long
 using namespace std;
 
-class Max_Min_Heap{
+class MaxMinHeap{
 private:
     multiset<int>low , high;
     //low : 1 ~ (n + 1) / 2 , high : (n + 1) / 2 + 1 ~ n
