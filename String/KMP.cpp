@@ -1,31 +1,6 @@
 #include<bits/stdc++.h>
 using namespace std;
 
-#define NO cout<<"NO"<<'\n';
-#define NOO cout<<-1<<'\n';
-#define YES cout<<"YES"<<'\n';
-#define Yes cout<<"Yes"<<'\n';
-#define No cout<<"No"<<'\n';
-#define fs first
-#define sc second
-
-using db=double;
-using ll=long long;
-using ull=unsigned long long;
-using pii=pair<int,int>;
-using pll=pair<ll,ll>;
-using pdd=pair<db,db>;
-using i128=__int128_t;
-using ui128=__uint128_t;
-
-const db eps=1e-10;
-const db pi=acos(-1.0);
-const int inf=1e9+7;
-const int nil=-inf;
-const ll INF=1e18+10;
-const ll NIL=-INF;
-const int MOD=998244353;
-
 class KMP{
 private:
     string text;
