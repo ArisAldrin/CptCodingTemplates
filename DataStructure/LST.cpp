@@ -34,7 +34,8 @@ const db PI = acos(-1);
 mt19937 rdint(time(0));
 mt19937_64 rdll(time(0));
 
-struct Tag {
+class Tag{
+public:
     // Member Variable ...
     Tag() {}
     bool empty() const {
@@ -45,7 +46,8 @@ struct Tag {
     }
 };
 
-struct Info {
+class Info{
+public:
     // Member Variable ...
     Info() {}
     void apply(const Tag &t) & {
@@ -53,14 +55,15 @@ struct Info {
     }
 };
 
-Info operator+(const Info &a, const Info &b) {
+Info operator+(const Info &a, const Info &b){
     Info res;
     // Segment Merge ...
     return res;
 }
 
 template<class Info, class Tag>
-struct LazySegmentTree {
+class LazySegmentTree{
+public:
     int n;
     vector<Info> info;
     vector<Tag> tag;
@@ -130,8 +133,9 @@ struct LazySegmentTree {
         if (y > m) rangeApply(2 * p + 1, m + 1, r, x, y, v);
         pull(p);
     }
-
-    void build(const vector<int>& a) { build(a, 1, 1, n); }
+    
+    template<class T>
+    void build(const vector<T>& a) { build(a, 1, 1, n); }
     void modify(int x, const Info &v) { modify(1, 1, n, x, v); }
     Info rangeQuery(int l, int r) { return rangeQuery(1, 1, n, l, r); }
     void rangeApply(int l, int r, const Tag &v) { rangeApply(1, 1, n, l, r, v); }

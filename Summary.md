@@ -3,74 +3,227 @@
 ### 计算几何
 #### Point
 ```cpp
-#include<bits/stdc++.h>
-using db = double;
-
-class point{
+class PT{
 public:
     db fs , sc;
-    point(db x , db y) : fs(x) , sc(y) {}
+    PT(db x = 0 , db y = 0) : fs(x) , sc(y) {}
 
-    friend point operator+(const point& a , const point& b){ return point(a.fs + b.fs , a.sc + b.sc); }
-    friend point operator-(const point& a , const point& b){ return point(a.fs - b.fs , a.sc - b.sc); }
-    friend point operator*(const db& t    , const point& a){ return point(t * a.fs , t * a.sc); }
-    friend point operator*(const point& a , const db& t)   { return point(t * a.fs , t * a.sc); }
-    friend db    operator*(const point& a , const point& b){ return a.fs * b.sc - a.sc * b.fs; } // cross
-    friend db    operator%(const point& a , const point& b){ return a.fs * b.fs + a.sc * b.sc; } // dot
+    friend PT operator+(const PT& a , const PT& b){ return PT(a.fs + b.fs , a.sc + b.sc); }
+    friend PT operator-(const PT& a , const PT& b){ return PT(a.fs - b.fs , a.sc - b.sc); }
+    friend PT operator*(const db& t , const PT& a){ return PT(t * a.fs , t * a.sc); }
+    friend PT operator*(const PT& a , const db& t){ return PT(t * a.fs , t * a.sc); }
+    friend db operator*(const PT& a , const PT& b){ return a.fs * b.sc - a.sc * b.fs; } // cross
+    friend db operator%(const PT& a , const PT& b){ return a.fs * b.fs + a.sc * b.sc; } // dot
 
-    db len()        { return sqrt(fs * fs + sc * sc); }
-    db ang(point& b){ return acos(*this % b / this -> len() / b.len()); }
-    db dis(point& b){ return sqrt(1.0 * (b.fs - fs) * (b.fs - fs) + (b.sc -sc) * (b.sc - sc)); }
+    db len()     { return sqrt(fs * fs + sc * sc); }
+    db ang(PT& b){ return acos(*this % b / this -> len() / b.len()); }
+    db dis(PT& b){ return sqrt(1.0 * (b.fs - fs) * (b.fs - fs) + (b.sc -sc) * (b.sc - sc)); }
 };
 
-point getIntsct(point a , point DA , point b , point DB){ // point ---direction---> 
+PT GetIntsct(PT a , PT DA , PT b , PT DB){ // point ---direction---> 
     db ratio = (a - b) * DB / (DB * DA);
     return a + DA * ratio;
 }
+
+void PolarSort(vector<PT>& x){
+    sort(all(x) , [&](const PT& a , const PT& b){
+        db ag1 = atan2(a.sc , a.fs) , ag2 = atan2(b.sc , b.fs);
+        if(ag1 < 0)ag1 += 2 * PI;
+        if(ag2 < 0)ag2 += 2 * PI;
+        return ag1 < ag2;
+    });
+}
+
+void PolarSort_CrossProductVer(vector<PT>& x){
+    auto half = [](const PT& a) -> int {
+        return (a.sc < 0 || (a.sc == 0 && a.fs < 0)) ? 1 : 0;
+    };
+    sort(all(x) , [&](const PT& a, const PT& b){
+        if(half(a) != half(b)) return half(a) < half(b);
+        db cross = a * b;
+        return cross > EPS;
+    });
+}
 ```
+
+#### Andrew凸包
+```cpp
+vector<PT> andrew(vector<PT>& ps){
+    sort(all(ps) , [](PT& a , PT& b){
+        if(a.fs == b.fs)return a.sc < b.sc;
+        else return a.fs < b.fs;
+    });
+    vector<PT>res;
+    for(int i=0;i<(int)ps.size();++i){
+        while(res.size() >= 2 && (res[res.size() - 1] - res[res.size() - 2]) * (ps[i] - res[res.size() - 2]) <= 0)res.pop_back();
+        res.push_back(ps[i]);
+    }
+    int sz = res.size();
+    for(int i=ps.size() - 2;i>=0;--i){
+        while(res.size() >= sz + 1 && (res[res.size() - 1] - res[res.size() - 2]) * (ps[i] - res[res.size() - 2]) <= 0)res.pop_back();
+        res.push_back(ps[i]);
+    }
+    res.pop_back(); // delete the start
+    return res;
+}
+```
+
+#### 半平面交
+```cpp
+class LN{
+public:
+    PT p , d;
+    db ag;
+    LN() {}
+    LN(PT p , PT d) : p(p) , d(d) { ag = atan2(d.sc , d.fs); }
+    bool operator<(const LN& b) const {
+        if(fabs(ag - b.ag) > EPS)return ag < b.ag;
+        return d * (b.p - p) > EPS;
+    }
+};
+
+bool check(LN a , LN b , LN c){
+    PT p = GetIntsct(a.p , a.d , b.p , b.d);
+    return c.d * (p - c.p) < -EPS;
+}
+
+vector<PT> HalfPlaneIntersecion(vector<LN>& L){
+    sort(all(L));
+    deque<LN>q;
+    for(int i=0;i<(int)L.size();++i){
+        if(i < (int)L.size() - 1 && fabs(L[i].ag - L[i + 1].ag) < EPS)continue;
+        while(q.size() > 1 && check(q.back() , q[q.size() - 2] , L[i]))q.pop_back();
+        while(q.size() > 1 && check(q.front() , q[1] , L[i]))q.pop_front();
+        q.push_back(L[i]);
+    }
+    while(q.size() > 1 && check(q.back() , q[q.size() - 2] , q.front()))q.pop_back();
+    while(q.size() > 1 && check(q.front() , q[1] , q.back()))q.pop_front();
+    if(q.size() < 3) return {};
+    vector<PT> ans;
+    for(int i=0;i<(int)q.size() - 1;++i)ans.push_back(GetIntsct(q[i].p, q[i].d , q[i + 1].p , q[i + 1].d));
+    ans.push_back(GetIntsct(q.back().p , q.back().d , q.front().p , q.front().d));
+    return ans;
+}
+```
+
 ### 数据结构
+#### 树状数组
+```cpp
+class BIT{
+private:
+    int n;
+    vector<int>tr;
+    int lowbit(int x){ return x & -x; }
+public:
+    BIT(vector<int>a){
+        tr.assign(a.size() , 0);
+        n = a.size() - 1;
+        for(int i=1;i<=n;++i)add(i , a[i]);
+    }
+    BIT(int sz) : n(sz) , tr(sz + 1 , 0) {}
+    void add(int id , int x){
+        while(id <= n)tr[id] += x , id += lowbit(id);
+    }
+    int askpre(int id){
+        int res = 0;
+        while(id)res += tr[id] , id -= lowbit(id);
+        return res;
+    }
+};
+
+class CompleteBIT{
+private:
+    int n;
+    BIT tr1 , tr2;
+    int lowbit(int x){ return x & -x; }
+    void add(int id , int x){
+        tr1.add(id , x);
+        tr2.add(id , x * id);
+    }
+public:
+    CompleteBIT(int n) : tr1(n) , tr2(n) , n(n){}
+    CompleteBIT(vector<int>& a) : n(a.size() - 1) , tr1(n) , tr2(n){ for(int i=1;i<=n;++i)addrg(i , i , a[i]); }
+    
+    void addrg(int l , int r , int x){
+        add(l , x) , add(r + 1 , -x);
+    }
+
+    int askpre(int id){
+        return (id + 1) * tr1.askpre(id) - tr2.askpre(id);
+    }
+
+    int askrg(int l , int r){
+        return askpre(r) - askpre(l - 1);
+    }
+};
+```
+
 #### 并查集
 ```cpp
-#include<bits/stdc++.h>
-#define all(x) (x).begin() , (x).end()
-using namespace std; 
-
 class DSU{
 private:
-    vector<int>fa , rk;
+    vector<int>fa , sz;
 public:
     DSU(int n){
-        fa.assign(n , 0); rk.assign(n , 0);
+        fa.assign(n + 1 , 0); sz.assign(n + 1 , 1);
         iota(all(fa) , 0);
     }
     int find(int x){
-        if(fa[x] == x)return x;
-        else return fa[x] = find(fa[x]);
+        return fa[x] == x ? x : fa[x] = find(fa[x]);
     }
-
+    bool same(int x , int y){
+        return find(x) == find(y);
+    }
     void merge(int x , int y){
         x = find(x); y = find(y);
         if(x == y)return;
-        if(rk[x] < rk[y]){
-            fa[x] = y;
-        }else{
-            fa[y] = x;
-            if(rk[x] == rk[y])rk[x] ++;
-        }
+        if(sz[x] < sz[y])swap(x , y);
+        fa[y] = x;
+        sz[x] += sz[y];
     }
+    int size(int x){
+        return sz[find(x)];
+    }
+};
 
-    bool same(int x , int y){
-        return find(x) == find(y);
+class DSU_Rollbackable{
+private:
+    vector<int>fa , sz;
+    vector<pii>st;
+    DSU_Rollbackable(int n){
+        fa.assign(n + 1 , 0);
+        sz.assign(n + 1 , 1);
+        iota(all(fa) , 0);
+    }
+    int find(int x){
+        while(fa[x] != x)x = fa[x];
+        return x;
+    }
+    void merge(int x , int y){
+        x = find(x); y = find(y);
+        if(x == y)return;
+        if(sz[x] < sz[y])swap(x , y);
+        st.push_back({y , x});
+        sz[x] += sz[y];
+        fa[y] = x;
+    }
+    int cur(){
+        return st.size();
+    }
+    void rollback(int k){
+        while(st.size() > k){
+            int y = st.back().fs;
+            int x = st.back().sc;
+            st.pop_back();
+            fa[y] = y;
+            sz[x] -= sz[y];
+        }
     }
 };
 ```
 #### 对顶堆维护中位数
 ```cpp
-#include<bits/stdc++.h>
-#define int long long
-using namespace std;
-
-class Max_Min_Heap{
+class MaxMinHeap{
 private:
     multiset<int>low , high;
     //low : 1 ~ (n + 1) / 2 , high : (n + 1) / 2 + 1 ~ n
@@ -100,128 +253,120 @@ public:
         return *low.rbegin();
     }
 };
-
 ```
+
 #### 线段树
 ```cpp
-#include<bits/stdc++.h>
-using namespace std;
-
-#define int long long
-
-const int INF = 1e9+7;
-const int N = 100010;
-const int MOD=998244353;
-
-typedef pair<int, int>P;
-
-int n, cmd;
-int a[N];
-int lazy[N * 4], node[N * 4];
-
-inline int ls(int x) {
-    return x << 1;//左儿子：乘2
-}
-
-inline int rs(int x) {
-    return x << 1 | 1;//右儿子：乘2加1
-}
-
-inline void pushup(int now) {
-    node[now] = node[ls(now)] + node[rs(now)];
-}
-
-void build(int now, int l, int r) {
-    lazy[now] = 0;
-    if (l == r) { node[now] = a[l]; return; }//区间长度为1
-    int mid = (l + r) >> 1;
-    build(ls(now), l, mid);
-    build(rs(now), mid + 1, r);
-    pushup(now);
-}
-
-inline void add(int now, int l, int r, int key) {
-    lazy[now] += key;//
-    node[now] += key * (r - l + 1);
-}
-
-inline void pushdown(int fa, int l, int r) {
-    int mid = (l + r) >> 1;
-    add(ls(fa), l, mid, lazy[fa]);
-    add(rs(fa), mid + 1, r, lazy[fa]);
-    lazy[fa] = 0;
-}
-
-inline void update(int L, int R, int l, int r, int now, int key) {
-    if (L <= l && R >= r) {
-        node[now] += key * (r - l + 1);
-        lazy[now] += key;
-        return;
+class Tag{
+public:
+    // Member Variable ...
+    Tag() {}
+    bool empty() const {
+        // How is the Tag empty ...
     }
-    pushdown(now, l, r);
-    int mid = (l + r) >> 1;
-    if (L <= mid)update(L, R, l, mid, ls(now), key);
-    if (R > mid)update(L, R, mid + 1, r, rs(now), key);
-    pushup(now);
-}
+    void apply(const Tag &t) & {
+        // Tag merge ...
+    }
+};
 
-int ask(int L, int R, int l, int r, int now) {
-    int res = 0;
-    if (L <= l && R >= r)return node[now];
-    int mid = (l + r) >> 1;
-    pushdown(now, l, r);
-    if (L <= mid)res += ask(L, R, l, mid, ls(now));
-    if (R > mid)res += ask(L, R, mid + 1, r, rs(now));
+class Info{
+public:
+    // Member Variable ...
+    Info() {}
+    void apply(const Tag &t) & {
+        // How Tag apply to the data ...
+    }
+};
+
+Info operator+(const Info &a, const Info &b){
+    Info res;
+    // Segment Merge ...
     return res;
 }
 
-void solve() {
-    int type; cin >> type;
-    if (type == 1) {
-        int l, r, key; cin >> l >> r >> key; l--, r--;
-        update(l, r, 0, n - 1, 1, key);
-    }
-    else if (type == 2) {
-        int l, r; cin >> l >> r; l--, r--;
-        cout << ask(l, r, 0, n - 1, 1) << endl;
-    }
-}
+template<class Info, class Tag>
+class LazySegmentTree{
+public:
+    int n;
+    vector<Info> info;
+    vector<Tag> tag;
 
-signed main() {
-    ios::sync_with_stdio(false);
-    cin.tie(0); cout.tie(0);
-    cin >> n >> cmd;
-    for (int i = 0; i < n; ++i)cin >> a[i];
-    build(1, 0, n - 1);
-    while (cmd--) {
-        solve();
+    LazySegmentTree(int n_) : n(n_) {
+        info.assign(4 * n + 1, Info());
+        tag.assign(4 * n + 1, Tag());
     }
-    return 0;
-}
 
-// in:
-// //n,cmd
-// // a[i]
-// //type l r (if(type==1)key)
-// 5 5
-// 1 5 4 2 3
-// 2 2 4
-// 1 2 3 2
-// 2 3 4
-// 1 1 5 1
-// 2 1 4
+    template<class T>
+    void build(const vector<T>& a, int p, int l, int r) {
+        if (l == r) {
+            info[p] = Info(a[l]);
+            return;
+        }
+        int m = (l + r) / 2;
+        build(a, 2 * p, l, m);
+        build(a, 2 * p + 1, m + 1, r);
+        pull(p);
+    }
 
-// out:
-// 11
-// 8
-// 20
+    void pull(int p) {
+        info[p] = info[2 * p] + info[2 * p + 1];
+    }
+
+    void apply(int p, const Tag &v) {
+        info[p].apply(v);
+        tag[p].apply(v);
+    }
+
+    void push(int p) {
+        if (tag[p].empty()) return;
+        apply(2 * p, tag[p]);
+        apply(2 * p + 1, tag[p]);
+        tag[p] = Tag();
+    }
+
+    void modify(int p, int l, int r, int x, const Info &v) {
+        if (l == r) {
+            info[p] = v;
+            return;
+        }
+        int m = (l + r) / 2;
+        push(p);
+        if (x <= m) modify(2 * p, l, m, x, v);
+        else modify(2 * p + 1, m + 1, r, x, v);
+        pull(p);
+    }
+
+    Info rangeQuery(int p, int l, int r, int x, int y) {
+        if (l >= x && r <= y) return info[p];
+        int m = (l + r) / 2;
+        push(p);
+        if (y <= m) return rangeQuery(2 * p, l, m, x, y);
+        if (x > m) return rangeQuery(2 * p + 1, m + 1, r, x, y);
+        return rangeQuery(2 * p, l, m, x, y) + rangeQuery(2 * p + 1, m + 1, r, x, y);
+    }
+
+    void rangeApply(int p, int l, int r, int x, int y, const Tag &v) {
+        if (l >= x && r <= y) {
+            apply(p, v);
+            return;
+        }
+        int m = (l + r) / 2;
+        push(p);
+        if (x <= m) rangeApply(2 * p, l, m, x, y, v);
+        if (y > m) rangeApply(2 * p + 1, m + 1, r, x, y, v);
+        pull(p);
+    }
+    
+    template<class T>
+    void build(const vector<T>& a) { build(a, 1, 1, n); }
+    void modify(int x, const Info &v) { modify(1, 1, n, x, v); }
+    Info rangeQuery(int l, int r) { return rangeQuery(1, 1, n, l, r); }
+    void rangeApply(int l, int r, const Tag &v) { rangeApply(1, 1, n, l, r, v); }
+};
 ```
 #### ST表
 ```cpp
-#include<bits/stdc++.h>
-using namespace std;
 const int inf=1e9+7;
-
 class ST{
 private:
     vector<vector<int> >st;
@@ -270,13 +415,6 @@ void solve(){
 ### 图论
 #### Tarjan_LCA
 ```cpp
-#include<bits/stdc++.h>
-#define all(x) (x).begin() , (x).end()
-#define fs first
-#define sc second
-using namespace std;
-using pii = pair<int , int>;
-
 int n , q;
 vector<vector<int> >g;
 vector<vector<pii> >qry;
@@ -324,69 +462,82 @@ signed main(){
     return 0;
 }
 ```
-#### 拓扑排序
+#### Kahn拓扑排序
 ```cpp
-#include<bits/stdc++.h>
+vector<vector<int> > g;
+vector<int>res , cond;
+bool cyc = false;
 
-using namespace std;
-
-#define int long long
-
-const int N=50010;
-
-int n,m;
-vector<int>g[N];
-int in[N];
-
-bool toposort() {
-    vector<int> L;
-    queue<int> S;
-    for (int i = 1; i <= n; i++)
-    if (in[i] == 0) S.push(i);
-    while (!S.empty()) {
-    int u = S.front();
-    S.pop();
-    L.push_back(u);
-    for (auto v : g[u]) {
-        if (--in[v] == 0) {
-            S.push(v);
+void dfs(int now){
+    if(cyc)return;
+    cond[now] = 1;
+    for(auto i:g[now]){
+        if(cond[i] == 0)dfs(i);
+        else if(cond[i] == 1){
+            cyc = true;
+            return;
         }
     }
-    }
-    if (L.size() == n) {
-    for (auto i : L) cout << i << ' ';
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
-void solve(){
-    cin>>n>>m;
-    for(int i=0;i<m;++i){
-        int u,v;cin>>u>>v;
-        g[u].push_back(v);
-    }
-    if(toposort())cout<<"YES"<<'\n';
-    else cout<<"NO"<<'\n';
+    cond[now] = 2;
+    res.push_back(now);
 }
 
 signed main(){
-    ios::sync_with_stdio(0);
-    cin.tie(0);cout.tie(0);
-    solve();
+    int n,m;cin >> n >> m;
+    g.assign(n + 1 , vector<int>());
+    cond.assign(n + 1 , 0);
+    res.clear();
+    for(int i=1;i<=m;++i){
+        int u,v;cin >> u >> v;
+        g[u].push_back(v);
+    }
+    for(int i=1;i<=n;++i)if(cond[i] == 0)dfs(i);
+    reverse(all(res));
+    if(!cyc){
+        for(auto i:res)cout << i << ' '; cout << '\n';
+    }else NO
+    return 0;
+}
+```
+#### DFS拓扑排序
+```cpp
+vector<vector<int> > g;
+vector<int>res , cond;
+bool cyc = false;
+
+void dfs(int now){
+    if(cyc)return;
+    cond[now] = 1;
+    for(auto i:g[now]){
+        if(cond[i] == 0)dfs(i);
+        else if(cond[i] == 1){
+            cyc = true;
+            return;
+        }
+    }
+    cond[now] = 2;
+    res.push_back(now);
+}
+
+signed main(){
+    int n,m;cin >> n >> m;
+    g.assign(n + 1 , vector<int>());
+    cond.assign(n + 1 , 0);
+    res.clear();
+    for(int i=1;i<=m;++i){
+        int u,v;cin >> u >> v;
+        g[u].push_back(v);
+    }
+    for(int i=1;i<=n;++i)if(cond[i] == 0)dfs(i);
+    reverse(all(res));
+    if(!cyc){
+        for(auto i:res)cout << i << ' '; cout << '\n';
+    }else NO
     return 0;
 }
 ```
 #### BellmanFord
 ```cpp
-#include<bits/stdc++.h>
-
-using namespace std;
-
-#define int long long
-
 struct edge{
     int from,to,cost;
 };
@@ -411,7 +562,7 @@ void BellmanFord(int s){
                 update=true;
             }
         }
-        if(!update)break;//直到遍历一次没有更新：找到最优解
+        if(!update)break;// 直到遍历一次没有更新：找到最优解
     }
 }
 
@@ -422,7 +573,7 @@ bool FindNegativeLoop(){
             edge e=es[j];
             if(d[e.to]>d[e.from]+e.cost){
                 d[e.to]=d[e.from]+e.cost;
-                if(i==V-1)return true;//如果第V次仍然更新，则存在负圈
+                if(i==V-1)return true;// 如果第V次仍然更新，则存在负圈
             }
         }
     }
@@ -450,16 +601,8 @@ signed main(){
 ```
 #### Dijkstra次短路
 ```cpp
-#include<bits/stdc++.h>
-
-using namespace std;
-
-#define int long long
-
 typedef pair<int,int>P;
-
 const int INF=1e9+7;
-
 int dijkstra(vector<P>g[],int s,int t,int V){
     priority_queue<P>q;
     q.push({0,s});
@@ -489,15 +632,12 @@ void solve(){
 #include<bits/stdc++.h>
 using namespace std;
 #define int long long
-
 const int N=70000;
 const int INF=1e9+7;
 const int NIL=-1000000007;
 const double pi=acos(-1.0);
 
-//
 //Vertex indexes start with 1
-//
 
 typedef pair<int, int>P;//1st:cost , 2nd:to
 
@@ -549,12 +689,6 @@ signed main() {
 ```
 #### Kruskal
 ```cpp
-#include<bits/stdc++.h>
-
-using namespace std;
-
-#define int long long
-
 const int N=500010;
 const int MAXE=500010;
 
@@ -626,11 +760,82 @@ void solve(){
 }
 ```
 ### 字符串
-#### 通用Trie
+#### Trie
 ```cpp
-#include<bits/stdc++.h>
-#define int long long
-using namespace std;
+class Trie{
+public:
+    vector<arr<int, 26> >ch;
+    vector<int> cnt , pass;
+    Trie(){
+        ch.push_back({});
+        ch[0].fill(0);
+        cnt.push_back(0);
+        pass.push_back(0);
+    }
+
+    void insert(const string& s){
+        int u = 0;
+        pass[u]++;
+        for (char c:s){
+            int x = c - 'a';
+            if(!ch[u][x]){
+                ch.push_back({});
+                ch.back().fill(0);
+                cnt.push_back(0);
+                pass.push_back(0);
+                ch[u][x] = ch.size() - 1;
+            }
+            u = ch[u][x];
+            pass[u]++;
+        }
+        cnt[u]++;
+    }
+
+    int search(const string& s){
+        int u = 0;
+        for(char c:s){
+            int x = c - 'a';
+            if(!ch[u][x]) return 0;
+            u = ch[u][x];
+        }
+        return cnt[u];
+    }
+
+    int askpre(const string& s){
+        int u = 0;
+        for(char c:s){
+            int x = c - 'a';
+            if(!ch[u][x])return 0;
+            u = ch[u][x];
+        }
+        return pass[u];
+    }
+
+    void erase(const string& s){
+        if(!search(s))return;
+        int u = 0;
+        pass[u]--;
+        for(char c:s){
+            int x = c - 'a';
+            u = ch[u][x];
+            pass[u]--;
+        }
+        cnt[u]--;
+    }
+};
+
+void solve(){
+    int n;cin >> n;
+    Trie trie;
+    while(n--){
+        int op; string s;
+        cin >> op >> s;
+        if(op == 1)trie.insert(s);
+        else if(op == 2)trie.erase(s);
+        else if(op == 3)cout << (trie.search(s) ? "YES" : "NO") << '\n';
+        else cout << trie.askpre(s) << '\n';
+    }
+}
 
 class TrieNode{
 public:
@@ -677,7 +882,7 @@ public:
     }
 };
 
-void solve(){
+void solve2(){
     Generic_Trie trie;
     int n;cin >> n;
     for(int i=0;i<n;++i){
@@ -699,34 +904,6 @@ void solve(){
 ```
 #### KMP
 ```cpp
-#include<bits/stdc++.h>
-using namespace std;
-
-#define NO cout<<"NO"<<'\n';
-#define NOO cout<<-1<<'\n';
-#define YES cout<<"YES"<<'\n';
-#define Yes cout<<"Yes"<<'\n';
-#define No cout<<"No"<<'\n';
-#define fs first
-#define sc second
-
-using db=double;
-using ll=long long;
-using ull=unsigned long long;
-using pii=pair<int,int>;
-using pll=pair<ll,ll>;
-using pdd=pair<db,db>;
-using i128=__int128_t;
-using ui128=__uint128_t;
-
-const db eps=1e-10;
-const db pi=acos(-1.0);
-const int inf=1e9+7;
-const int nil=-inf;
-const ll INF=1e18+10;
-const ll NIL=-INF;
-const int MOD=998244353;
-
 class KMP{
 private:
     string text;
@@ -761,9 +938,6 @@ public:
 ```
 #### 字符串哈希
 ```cpp
-#include<bits/stdc++.h>
-using namespace std;
-using ll = long long;
 using ull = unsigned long long;
 
 class StringHash{
@@ -791,9 +965,6 @@ public:
 ### 数学
 #### FFT
 ```cpp
-#include<bits/stdc++.h>
-#define int long long
-using namespace std;
 using db = double;
 const db PI = acos(-1);
 
@@ -837,110 +1008,120 @@ void IFFT(vector<complex<db> >& A , int n){
     for(int i=0;i<n;++i)A[i] /= n;
 }
 ```
-#### 线性筛
+
+#### NTT
 ```cpp
-#include<bits/stdc++.h>
-using namespace std;
+const int MOD = 998244353;
+const int G = 3;
 
-#define NO cout<<"NO"<<'\n';
-#define NOO cout<<-1<<'\n';
-#define YES cout<<"YES"<<'\n';
-#define Yes cout<<"Yes"<<'\n';
-#define No cout<<"No"<<'\n';
-#define fs first
-#define sc second
+int fpowMOD(int a , int n , int p){
+    int res = 1; a %= p;
+    while(n){
+        if(n & 1)res = res * a % p;
+        a = a * a % p;
+        n >>= 1;
+    }
+    return res;
+}
 
-using db=double;
-using ll=long long;
-using ull=unsigned long long;
-using pii=pair<int,int>;
-using pll=pair<ll,ll>;
-using pdd=pair<db,db>;
-using i128=__int128_t;
-using ui128=__uint128_t;
-
-const db eps=1e-10;
-const db pi=acos(-1.0);
-const int inf=1e9+7;
-const int nil=-inf;
-const ll INF=1e18+10;
-const ll NIL=-INF;
-const int MOD=998244353;
-
-vector<int> EulerSieve(int n){
-    vector<int>pri;
-    vector<bool>not_pri;
-    not_pri.assign(n+1,false);
-    for(int i=2;i<=n;++i){
-        if(!not_pri[i])pri.push_back(i);
-        for(auto j:pri){
-            if(j*i>n)break;
-            not_pri[i*j]=true;
-            if(i%j==0)break;
+void NTT(vector<int>& A , int n , bool inv){
+    for(int i = 1 , j = 0;i<n;++i){
+        int bit = n >> 1;
+        for(;j & bit;bit >>= 1)j ^= bit;
+        j ^= bit;
+        if(i < j)swap(A[i], A[j]);
+    }
+    for(int m = 2;m <= n;m <<= 1){
+        int wn = inv ? fpowMOD(G , MOD - 1 - (MOD - 1) / m , MOD)
+                     : fpowMOD(G , (MOD - 1) / m , MOD);
+        for(int i=0;i<n;i += m){
+            int wk = 1;
+            for (int j=0;j<m / 2;++j){
+                int x = A[i + j] , y = A[i + j + m / 2] * wk % MOD;
+                A[i + j]         = (x + y) % MOD;
+                A[i + j + m / 2] = (x - y + MOD) % MOD;
+                wk = wk * wn % MOD;
+            }
         }
     }
-    return pri;
+    if(inv){
+        int ninv = fpowMOD(n, MOD - 2, MOD);
+        for (auto& x : A) x = x * ninv % MOD;
+    }
 }
 
-void solve(){
-    vector<int>pri=EulerSieve(300);
-    for(auto i:pri)cout << i << ' ';
-    cout << '\n';
+vector<int> PolyMul(vector<int>& a, vector<int>& b){
+    int n = 1;
+    int sz = a.size() + b.size() - 1;
+    while(n<sz)n <<= 1;
+
+    vector<int>A(n) , B(n);
+    for (int i=0;i<(int)a.size();++i)A[i] = a[i];
+    for (int i=0;i<(int)b.size();++i)B[i] = b[i];
+
+    NTT(A , n , false);
+    NTT(B , n , false);
+
+    for(int i=0;i<n;++i)A[i] = A[i] * B[i] % MOD;
+
+    NTT(A , n , true);
+
+    return vector<int>(A.begin(), A.begin() + sz);
 }
+```
+
+#### 线性筛
+```cpp
+class Sieve{
+public:
+    vector<bool>vs;
+    vector<int>pm;
+    Sieve(int n){
+        vs.assign(n + 1 , false);
+        for(int i=2;i<=n;++i){
+            if(!vs[i])pm.push_back(i);
+            for(int j=0;j<(int)pm.size() && pm[j] <= n / i;++j){
+                vs[pm[j] * i] = true;
+                if(i % pm[j] == 0)break;
+            }
+        }
+    }
+    bool is_prime(int x){
+        return x > 2 && !vs[x];
+    }
+};
 ```
 #### 乘法逆元/快速幂
 ```cpp
-#include<bits/stdc++.h>
-using namespace std;
-
-#define NO cout<<"NO"<<'\n';
-#define NOO cout<<-1<<'\n';
-#define YES cout<<"YES"<<'\n';
-#define Yes cout<<"Yes"<<'\n';
-#define No cout<<"No"<<'\n';
-#define fs first
-#define sc second
-
-using db=double;
-using ll=long long;
-using ull=unsigned long long;
-using pii=pair<int,int>;
-using pll=pair<ll,ll>;
-using pdd=pair<db,db>;
-using i128=__int128_t;
-using ui128=__uint128_t;
-
-const db eps=1e-10;
-const db pi=acos(-1.0);
-const int inf=1e9+7;
-const int nil=-inf;
-const ll INF=1e18+10;
-const ll NIL=-INF;
-const int MOD=998244353;
-
-int fpowMOD(int a,int n,int p){
-    int res=1;
+int fpow(int a , int n){
+    int res = 1;
     while(n){
-        if(n&1){
-            res=res*a%p;
-        }
-        a=a*a%p;
-        n>>=1;
+        if(n & 1)res *= a;
+        a *= a;
+        n >>= 1;
+    }
+    return res;
+}
+
+int fpowMOD(int a , int n , int p){
+    int res = 1;
+    while(n){
+        if(n & 1)res = res * a % p;
+        a = a * a % p;
+        n >>= 1;
     }
     return res;
 }
 
 void solve(){
-    int a,p;cin >> a >> p;
-    if(a%p)cout << fpowMOD(a,p-2,p) << '\n';
+    int a , p;cin >> a >> p;
+    if(a % p)cout << fpowMOD(a , MOD - 2 , MOD) << '\n';
 }
+
 ```
 ### 杂项
 #### i128
 ```cpp
-#include<bits/stdc++.h>
-#define all(x) (x).begin() , (x).end()
-using namespace std;
 using i128 = __int128_t;
 
 istream &operator>>(istream &is , i128 &n){
@@ -961,47 +1142,75 @@ ostream &operator<<(ostream &os , i128 &n){
     reverse(all(s));
     return os << s;
 }
-
 ```
 #### 高精度
 ```cpp
-#include<bits/stdc++.h>
-#define int long long
-using namespace std;
-using ll = long long;
+const int MOD = 998244353;
+const int G = 3;
+const int Gi = 332748118;
 
-class BigInt{
+int qpow(int a, int b) {
+    int res = 1; a %= MOD;
+    while (b) {
+        if (b & 1) res = res * a % MOD;
+        a = a * a % MOD;
+        b >>= 1;
+    }
+    return res;
+}
+
+void ntt(vector<int>& a, int n, int type) {
+    static vector<int> r;
+    if (r.size() != n) {
+        r.resize(n);
+        for (int i = 0; i < n; i++) r[i] = (r[i >> 1] >> 1) | ((i & 1) ? (n >> 1) : 0);
+    }
+    for (int i = 0; i < n; i++) if (i < r[i]) swap(a[i], a[r[i]]);
+    for (int mid = 1; mid < n; mid <<= 1) {
+        int wn = qpow(type == 1 ? G : Gi, (MOD - 1) / (mid << 1));
+        for (int j = 0; j < n; j += (mid << 1)) {
+            int w = 1;
+            for (int k = 0; k < mid; k++, w = w * wn % MOD) {
+                int x = a[j + k], y = w * a[j + mid + k] % MOD;
+                a[j + k] = (x + y) % MOD;
+                a[j + mid + k] = (x - y + MOD) % MOD;
+            }
+        }
+    }
+    if (type == -1) {
+        int inv = qpow(n, MOD - 2);
+        for (int i = 0; i < n; i++) a[i] = a[i] * inv % MOD;
+    }
+}
+
+class BigInt {
 private:
     static const int BASE = 100000000;
     static const int WIDTH = 8;
-    vector<int>a;
+    vector<int> a;
     bool sign;
 
-    // 去除前导零 : 许多东西的依赖
     void trim() {
-        while(a.size() > 1 && a.back() == 0) a.pop_back();
-        if(a.size() == 1 && a[0] == 0) sign = false;
+        while (a.size() > 1 && a.back() == 0) a.pop_back();
+        if (a.empty()) a.push_back(0);
+        if (a.size() == 1 && a[0] == 0) sign = false;
     }
 
-    // 无符号比较 : 许多东西的依赖
     bool abs_less(const BigInt& b) const {
-        if(a.size() != b.a.size()) return a.size() < b.a.size();
-        for(int i=a.size() - 1;i>=0;i--){
-            if(a[i] != b.a[i]) return a[i] < b.a[i];
-        }
+        if (a.size() != b.a.size()) return a.size() < b.a.size();
+        for (int i = a.size() - 1; i >= 0; i--)
+            if (a[i] != b.a[i]) return a[i] < b.a[i];
         return false;
     }
-    
-    // 无符号加减法 : 加减法 , 无符号带余数除法的依赖
+
     BigInt abs_add(const BigInt& b) const {
-        BigInt res;
-        res.a.clear();
-        int cry = 0;
-        for(int i=0;i<a.size() || i < b.a.size() || cry;i++){
-            if(i < a.size()) cry += a[i];
-            if(i < b.a.size()) cry += b.a[i];
-            res.a.push_back(cry % BASE);
-            cry /= BASE;
+        BigInt res; res.a.clear();
+        int c = 0;
+        for (int i = 0; i < max(a.size(), b.a.size()) || c; i++) {
+            if (i < a.size()) c += a[i];
+            if (i < b.a.size()) c += b.a[i];
+            res.a.push_back(c % BASE);
+            c /= BASE;
         }
         res.trim();
         return res;
@@ -1009,7 +1218,7 @@ private:
 
     BigInt abs_sub(const BigInt& b) const {
         BigInt res = *this;
-        for(int i=0, brw=0;i < b.a.size() || brw;i++){
+        for (int i = 0, brw = 0; i < res.a.size(); i++) {
             res.a[i] -= (i < b.a.size() ? b.a[i] : 0) + brw;
             brw = (res.a[i] < 0);
             if (brw) res.a[i] += BASE;
@@ -1018,65 +1227,47 @@ private:
         return res;
     }
 
-    // 无符号带余数（通过r传出）除法 ： 除法/取模的依赖 ，同时它依赖乘法重载
     BigInt abs_mod_div(const BigInt& b, BigInt& r) const {
-        BigInt q(0);
-        r = *this;
-        if(r.abs_less(b)) return q; 
-        
-        BigInt tmpr = *this;
+        if (b.a.size() == 1 && b.a[0] == 0) { r = *this; return BigInt(0); }
+        BigInt q(0); r = *this;
+        if (abs_less(b)) { r.sign = false; return q; }
         q.a.resize(a.size() - b.a.size() + 1);
-        
-        for(int i=a.size() - b.a.size();i>=0;--i){
-            ll low = 0, high = BASE, ansq = 0;
-            
-            while(low <= high){
-                ll mid = low + (high - low) / 2;
-                BigInt tmpp = b.abs_add(BigInt(0)) * BigInt(mid);
-                if(!tmpr.abs_less(tmpp)){
-                    ansq = mid;
-                    low = mid + 1;
-                }else{
-                    high = mid - 1;
-                }
+        for (int i = a.size() - b.a.size(); i >= 0; i--) {
+            BigInt sfd = b;
+            sfd.a.insert(sfd.a.begin(), i, 0);
+            int low = 0, high = BASE - 1, ansq = 0;
+            while (low <= high) {
+                int mid = low + (high - low) / 2;
+                if (!r.abs_less(sfd * BigInt(mid))) { ansq = mid; low = mid + 1; }
+                else high = mid - 1;
             }
             q.a[i] = ansq;
-            tmpr = tmpr.abs_sub(b.abs_add(BigInt(0)) * BigInt(ansq));
+            r = r.abs_sub(sfd * BigInt(ansq));
         }
-        q.trim();
-        r = tmpr;
-        r.sign = false;
+        q.trim(); r.trim(); r.sign = false;
         return q;
     }
 
 public:
-    BigInt(ll x = 0) : sign(false){
-        if(x < 0) sign = true, x = -x;
-        if(x == 0) a.push_back(0);
-        else while(x > 0){
-            a.push_back(x % BASE);
-            x /= BASE;
+    BigInt(int x = 0) : sign(x < 0) {
+        x = abs(x);
+        if (x == 0) a.push_back(0);
+        while (x > 0) { a.push_back(x % BASE); x /= BASE; }
+        trim();
+    }
+    BigInt(const string& s) : sign(false) {
+        int st = (s[0] == '-' ? 1 : 0);
+        if (s[0] == '-') sign = true;
+        for (int i = s.length(); i > st; i -= WIDTH) {
+            if (i - WIDTH < st) a.push_back(stoll(s.substr(st, i - st)));
+            else a.push_back(stoll(s.substr(i - WIDTH, WIDTH)));
         }
         trim();
     }
 
-    BigInt(const string& s) : sign(false){
-        int st = 0;
-        if(s[0] == '-') sign = true, st = 1;
-        
-        for(int i=s.length();i>st;i-=WIDTH){
-            if(i - WIDTH < st) a.push_back(stoi(s.substr(st, i - st)));
-            else a.push_back(stoi(s.substr(i - WIDTH, WIDTH)));
-        }
-        if(s.length() == st) a.push_back(0);
-        trim();
-    }
-
-    // <<<<<<<<<<<<<<<<<<<<<< 比较运算符 >>>>>>>>>>>>>>>>>>>>>>
     bool operator<(const BigInt& b) const {
-        if(sign != b.sign) return sign;
-        if(!sign) return abs_less(b);
-        return !abs_less(b) && *this != b;
+        if (sign != b.sign) return sign;
+        return sign ? b.abs_less(*this) : abs_less(b);
     }
     bool operator>(const BigInt& b) const { return b < *this; }
     bool operator<=(const BigInt& b) const { return !(*this > b); }
@@ -1084,84 +1275,76 @@ public:
     bool operator==(const BigInt& b) const { return sign == b.sign && a == b.a; }
     bool operator!=(const BigInt& b) const { return !(*this == b); }
 
-    // +++++++++++++++++++++++++ 加法 +++++++++++++++++++++++++
     BigInt operator+(const BigInt& b) const {
-        if(sign == b.sign){
-            BigInt res = abs_add(b);
-            res.sign = sign;
-            return res;
-        }else{
-            if(abs_less(b)){
-                BigInt tmp = b.abs_sub(*this);
-                tmp.sign = b.sign;
-                return tmp;
-            }else{
-                BigInt tmp = abs_sub(b);
-                tmp.sign = sign;
-                return tmp;
-            }
-        }
+        if (sign == b.sign) { BigInt res = abs_add(b); res.sign = sign; return res; }
+        if (abs_less(b)) { BigInt res = b.abs_sub(*this); res.sign = b.sign; return res; }
+        BigInt res = abs_sub(b); res.sign = sign; return res;
     }
-
-    // ---------------------- 减法(依赖加法) ----------------------
     BigInt operator-(const BigInt& b) const {
-        BigInt tmp = b;
-        tmp.sign = !b.sign;
-        return *this + tmp;
+        BigInt t = b; t.sign = !b.sign; return *this + t;
     }
 
-    // ********************** 乘法 **********************
     BigInt operator*(const BigInt& b) const {
-        BigInt res;
-        res.a.assign(a.size() + b.a.size(), 0);
-        for(int i=0;i<a.size();++i){
-            ll cry = 0;
-            for(int j=0;j<b.a.size() || cry;++j){
-                ll cur = res.a[i + j] + cry;
-                if(j < b.a.size()) cur += (ll)a[i] * b.a[j];
-                res.a[i + j] = cur % BASE;
-                cry = cur / BASE;
+        if ((a.size() == 1 && a[0] == 0) || (b.a.size() == 1 && b.a[0] == 0)) return BigInt(0);
+        if (a.size() + b.a.size() < 64) {
+            BigInt res; res.a.assign(a.size() + b.a.size(), 0);
+            for (int i = 0; i < a.size(); i++) {
+                int c = 0;
+                for (int j = 0; j < b.a.size() || c; j++) {
+                    int cur = res.a[i + j] + c + (j < b.a.size() ? a[i] * b.a[j] : 0);
+                    res.a[i + j] = cur % BASE; c = cur / BASE;
+                }
             }
+            res.sign = sign != b.sign; res.trim(); return res;
         }
-        res.trim();
-        res.sign = (res.a.size() != 1 || res.a[0] != 0) && (sign != b.sign);
-        return res;
+        vector<int> va, vb;
+        for (int x : a) { for (int i = 0; i < WIDTH; i++) { va.push_back(x % 10); x /= 10; } }
+        for (int x : b.a) { for (int i = 0; i < WIDTH; i++) { vb.push_back(x % 10); x /= 10; } }
+        int n = 1, m = va.size() + vb.size() - 1;
+        while (n <= m) n <<= 1;
+        va.resize(n); vb.resize(n);
+        ntt(va, n, 1); ntt(vb, n, 1);
+        for (int i = 0; i < n; i++) va[i] = va[i] * vb[i] % MOD;
+        ntt(va, n, -1);
+        BigInt res; res.a.clear();
+        int c = 0;
+        for (int i = 0; i < m || c; i++) {
+            if (i < m) c += va[i];
+            res.a.push_back(c % 10); c /= 10;
+        }
+        string s = ""; if (sign != b.sign) s += '-';
+        for (int i = res.a.size() - 1; i >= 0; i--) s += (char)(res.a[i] + '0');
+        return BigInt(s);
     }
 
-    // ////////////////////// 除法 //////////////////////
     BigInt operator/(const BigInt& b) const {
-        BigInt r;
-        BigInt q = abs_mod_div(b, r);
-        bool signres = (q.a.size() != 1 || q.a[0] != 0) && (sign != b.sign);
-        q.sign = signres;
+        BigInt r; BigInt q = abs_mod_div(b, r);
+        q.sign = (q.a.size() > 1 || q.a[0] > 0) && (sign != b.sign);
         return q;
     }
-
     BigInt operator%(const BigInt& b) const {
-        BigInt r;
-        abs_mod_div(b, r);
-        bool signres = (r.a.size() != 1 || r.a[0] != 0) && sign;
-        r.sign = signres;
+        BigInt r; abs_mod_div(b, r);
+        r.sign = (r.a.size() > 1 || r.a[0] > 0) && sign;
         return r;
     }
 
-    // <<<<<<<<<<<<<<<<<<<<<< 输入输出 >>>>>>>>>>>>>>>>>>>>>>>
-    friend istream& operator>>(istream& is, BigInt& n){
-        string s;
-        is >> s;
-        n = BigInt(s);
-        return is;
+    friend istream& operator>>(istream& is, BigInt& n) {
+        string s; if (!(is >> s)) return is;
+        n = BigInt(s); return is;
     }
-    friend ostream& operator<<(ostream& os, const BigInt& n){
-        if(n.a.empty() || (n.a.size() == 1 && n.a[0] == 0)) return os << 0;
-        if(n.sign) os << '-';
+    friend ostream& operator<<(ostream& os, const BigInt& n) {
+        if (n.sign) os << '-';
         os << n.a.back();
-        for(int i=n.a.size() - 2;i>=0;--i){
-            os << setfill('0') << setw(WIDTH) << n.a[i];
-        }
+        for (int i = n.a.size() - 2; i >= 0; i--) os << setfill('0') << setw(WIDTH) << n.a[i];
         return os;
     }
 };
+
+signed main() {
+    BigInt a,b;cin >> a >> b;
+    cout << a * b << '\n';
+    return 0;
+}
 ```
 #### CMakelist
 ```cmake
@@ -1178,4 +1361,46 @@ foreach(SRC ${SOURCES})
     get_filename_component(FILENAME ${SRC} NAME_WE)
     add_executable(${FILENAME} ${SRC})
 endforeach()
+```
+
+#### CompileScript
+```bash
+#!/bin/bash
+
+if [ -z "$1" ]; then
+    echo "Usage: comp <source.cpp>"
+    exit 1
+fi
+
+SRC="$1"
+
+if [ ! -f "$SRC" ]; then
+    echo "Error: File '$SRC' not found."
+    exit 1
+fi
+
+
+BASENAME=$(basename "$SRC" .cpp)
+OUTDIR=$(dirname "$SRC")
+OUT="$OUTDIR/$BASENAME"
+
+echo "Compiling $SRC -> $OUT ..."
+
+g++ -O2 -o "$OUT" "$SRC" \
+    -std=c++17 \
+    -Wall \
+    -Wextra \
+    -DLOCAL
+
+if [ $? -ne 0 ]; then
+    echo "Compilation failed."
+    exit 1
+fi
+
+echo "OK. Running $OUT ..."
+echo "----------------------------------------"
+
+"$OUT"
+
+# echo 'alias comp="~/Desktop/icpc/comp"' >> ~/.bashrc && source ~/.bashrc && echo "OK"
 ```

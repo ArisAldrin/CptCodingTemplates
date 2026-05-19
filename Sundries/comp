@@ -1,0 +1,38 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+    echo "Usage: comp <source.cpp>"
+    exit 1
+fi
+
+SRC="$1"
+
+if [ ! -f "$SRC" ]; then
+    echo "Error: File '$SRC' not found."
+    exit 1
+fi
+
+
+BASENAME=$(basename "$SRC" .cpp)
+OUTDIR=$(dirname "$SRC")
+OUT="$OUTDIR/$BASENAME"
+
+echo "Compiling $SRC -> $OUT ..."
+
+g++ -O2 -o "$OUT" "$SRC" \
+    -std=c++17 \
+    -Wall \
+    -Wextra \
+    -DLOCAL
+
+if [ $? -ne 0 ]; then
+    echo "Compilation failed."
+    exit 1
+fi
+
+echo "OK. Running $OUT ..."
+echo "----------------------------------------"
+
+"$OUT"
+
+# echo 'alias comp="~/Desktop/icpc/comp"' >> ~/.bashrc && source ~/.bashrc && echo "OK"

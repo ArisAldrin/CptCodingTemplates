@@ -43,3 +43,31 @@ void IFFT(vector<complex<db> >& A , int n){
     }
     for(int i=0;i<n;++i)A[i] /= n;
 }
+
+vector<int> PolyMul(vector<int>& a, vector<int>& b) {
+    int n = 1;
+    int sz = a.size() + b.size() - 1;
+    while(n < sz) n <<= 1;
+
+    vector<complex<db> >A(n) , B(n);
+    for(int i=0;i<(int)a.size();++i)A[i] = a[i];
+    for(int i=0;i<(int)b.size();++i)B[i] = b[i];
+
+    FFT(A , n);
+    FFT(B , n);
+
+    for(int i=0;i<n;i++)A[i] *= B[i];
+
+    IFFT(A , n);
+
+    vector<int> res(sz);
+    for(int i=0;i<sz;++i)res[i] = llround(A[i].real());
+    return res;
+}
+
+signed main(){
+    vector<int>a = {1 , 2 , 3};    // 1 + 2x + 3x^2
+    vector<int>b = {1 , 2 , 3};    // 1 + 2x + 3x^2
+    auto c = PolyMul(a , b);
+    for(auto x:c)cout << x << ' ';  // 1 4 10 12 9
+}
