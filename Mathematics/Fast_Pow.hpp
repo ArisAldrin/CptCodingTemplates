@@ -1,3 +1,4 @@
+#pragma once
 const int MOD = 998244353;
 
 int fpow(int a , int n){
@@ -10,11 +11,7 @@ int fpow(int a , int n){
     return res;
 }
 
-<<<<<<< HEAD:Mathematics/Fast_Pow.hpp
 int fpowMOD(int a , int n , int p = MOD){
-=======
-int fpowMOD(int a , int n , int p){
->>>>>>> 21c36e7 (add: ./Lots of stuff):Sundries/Fast_Pow.cpp
     int res = 1; a %= p;
     while(n){
         if(n & 1)res = res * a % p;
@@ -24,6 +21,4 @@ int fpowMOD(int a , int n , int p){
     return res;
 }
 
-int inv(int x , int p = MOD){
-    return fpowMOD(x , p - 2 , p);
-}
+int inv(int x , int p = MOD){ return fpowMOD(x , p - 2 , p); }

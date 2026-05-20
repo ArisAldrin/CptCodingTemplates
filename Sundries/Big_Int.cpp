@@ -5,17 +5,17 @@ const int MOD = 998244353;
 const int G = 3;
 const int Gi = 332748118;
 
-int qpow(int a, int b) {
-    int res = 1; a %= MOD;
-    while (b) {
-        if (b & 1) res = res * a % MOD;
-        a = a * a % MOD;
-        b >>= 1;
+int fpowMOD(int a , int n , int p = MOD){
+    int res = 1; a %= p;
+    while(n){
+        if(n & 1)res = res * a % p;
+        a = a * a % p;
+        n >>= 1;
     }
     return res;
 }
 
-void ntt(vector<int>& a, int n, int type) {
+void NTT(vector<int>& a, int n, int type) {
     static vector<int> r;
     if (r.size() != n) {
         r.resize(n);
@@ -23,7 +23,7 @@ void ntt(vector<int>& a, int n, int type) {
     }
     for (int i = 0; i < n; i++) if (i < r[i]) swap(a[i], a[r[i]]);
     for (int mid = 1; mid < n; mid <<= 1) {
-        int wn = qpow(type == 1 ? G : Gi, (MOD - 1) / (mid << 1));
+        int wn = fpowMOD(type == 1 ? G : Gi, (MOD - 1) / (mid << 1));
         for (int j = 0; j < n; j += (mid << 1)) {
             int w = 1;
             for (int k = 0; k < mid; k++, w = w * wn % MOD) {
@@ -34,7 +34,7 @@ void ntt(vector<int>& a, int n, int type) {
         }
     }
     if (type == -1) {
-        int inv = qpow(n, MOD - 2);
+        int inv = fpowMOD(n, MOD - 2);
         for (int i = 0; i < n; i++) a[i] = a[i] * inv % MOD;
     }
 }
@@ -125,7 +125,7 @@ public:
         if (sign != b.sign) return sign;
         return sign ? b.abs_less(*this) : abs_less(b);
     }
-    bool operator>(const BigInt& b) const { return b < *this; }
+    bool operator> (const BigInt& b) const { return b < *this; }
     bool operator<=(const BigInt& b) const { return !(*this > b); }
     bool operator>=(const BigInt& b) const { return !(*this < b); }
     bool operator==(const BigInt& b) const { return sign == b.sign && a == b.a; }
@@ -159,9 +159,9 @@ public:
         int n = 1, m = va.size() + vb.size() - 1;
         while (n <= m) n <<= 1;
         va.resize(n); vb.resize(n);
-        ntt(va, n, 1); ntt(vb, n, 1);
+        NTT(va, n, 1); NTT(vb, n, 1);
         for (int i = 0; i < n; i++) va[i] = va[i] * vb[i] % MOD;
-        ntt(va, n, -1);
+        NTT(va, n, -1);
         BigInt res; res.a.clear();
         int c = 0;
         for (int i = 0; i < m || c; i++) {

@@ -15,8 +15,6 @@ public:
             }
         }
     }
-    bool is_prime(int x){
-        return x > 2 && !vs[x];
-    }
+    bool is_prime(int x){ return x > 2 && !vs[x]; }
 };
 

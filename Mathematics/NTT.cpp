@@ -1,18 +1,8 @@
-#include<bits/stdc++.h>
+#include <bits/stdc++.h>
+#include "Fast_Pow.hpp"
 #define int long long
 using namespace std;
-const int MOD = 998244353;
 const int G = 3;
-
-int fpowMOD(int a , int n , int p){
-    int res = 1; a %= p;
-    while(n){
-        if(n & 1)res = res * a % p;
-        a = a * a % p;
-        n >>= 1;
-    }
-    return res;
-}
 
 void NTT(vector<int>& A , int n , bool inv){
     for(int i = 1 , j = 0;i<n;++i){
