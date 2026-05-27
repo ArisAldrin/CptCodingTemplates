@@ -1,7 +1,7 @@
-## CptCodingTemplates
+## **CptCodingTemplates**
 
-### 计算几何
-#### Point
+### **计算几何**
+#### *Point*
 ```cpp
 class PT{
 public:
@@ -46,7 +46,7 @@ void PolarSort_CrossProductVer(vector<PT>& x){
 }
 ```
 
-#### Andrew凸包
+#### *Andrew凸包*
 ```cpp
 vector<PT> andrew(vector<PT>& ps){
     sort(all(ps) , [](PT& a , PT& b){
@@ -68,7 +68,7 @@ vector<PT> andrew(vector<PT>& ps){
 }
 ```
 
-#### 半平面交
+#### *半平面交*
 ```cpp
 class LN{
 public:
@@ -106,8 +106,8 @@ vector<PT> HalfPlaneIntersecion(vector<LN>& L){
 }
 ```
 
-### 数据结构
-#### 树状数组
+### **数据结构**
+#### *树状数组*
 ```cpp
 class BIT{
 private:
@@ -158,7 +158,7 @@ public:
 };
 ```
 
-#### 并查集
+#### *并查集*
 ```cpp
 class DSU{
 private:
@@ -221,7 +221,7 @@ private:
     }
 };
 ```
-#### 对顶堆维护中位数
+#### *对顶堆维护中位数*
 ```cpp
 class MaxMinHeap{
 private:
@@ -255,7 +255,7 @@ public:
 };
 ```
 
-#### 线段树
+#### *线段树*
 ```cpp
 class Tag{
 public:
@@ -364,7 +364,7 @@ public:
     void rangeApply(int l, int r, const Tag &v) { rangeApply(1, 1, n, l, r, v); }
 };
 ```
-#### ST表
+#### *ST表*
 ```cpp
 const int inf=1e9+7;
 class ST{
@@ -412,8 +412,45 @@ void solve(){
     }
 }
 ```
-### 图论
-#### Tarjan_LCA
+### **图论**
+#### *倍增最近公共祖先*
+```cpp
+int n , m;
+vector<int> dep;
+vector<vector<int> > fa , g;
+
+void dfs(int now , int from){
+    dep[now] = dep[from] + 1;
+    fa[now][0] = from;
+    for(int i=1;i<=25;++i)fa[now][i] = fa[fa[now][i - 1]][i - 1];
+    for(auto nx : g[now])if(nx != from)dfs(nx , now);
+}
+
+int lca(int u , int  v){
+    if(dep[u] < dep[v])swap(u , v);
+    for(int i=25;i>=0;--i)if(dep[fa[u][i]] >= dep[v])u = fa[u][i];
+    if(u == v)return v;
+    for(int i=25;i>=0;--i)if(fa[u][i] != fa[v][i])u = fa[u][i] , v = fa[v][i];
+    return fa[v][0];
+}
+
+void solve(){
+    cin >> n >> m;
+    dep.assign(n + 1 , 0); fa.assign(n + 1 , vector<int>(26 , 0)); g.assign(n + 1 , vector<int>());
+    for(int i=1;i<=m;++i){
+        int u,v;cin >> u >> v;
+        g[u].push_back(v);
+        g[v].push_back(u);
+    }
+    dfs(1 , 0);
+    int q;cin >> q;
+    while(q --){
+        int u,v;cin >> u >> v;
+        cout << lca(u , v) << '\n';
+    }
+}
+```
+#### *Tarjan最近公共祖先*
 ```cpp
 int n , q;
 vector<vector<int> >g;
@@ -462,7 +499,7 @@ signed main(){
     return 0;
 }
 ```
-#### Kahn拓扑排序
+#### *Kahn拓扑排序*
 ```cpp
 vector<vector<int> > g;
 vector<int>res , cond;
@@ -499,7 +536,7 @@ signed main(){
     return 0;
 }
 ```
-#### DFS拓扑排序
+#### *DFS拓扑排序*
 ```cpp
 vector<vector<int> > g;
 vector<int>res , cond;
@@ -536,7 +573,7 @@ signed main(){
     return 0;
 }
 ```
-#### BellmanFord
+#### *BellmanFord*
 ```cpp
 struct edge{
     int from,to,cost;
@@ -599,7 +636,7 @@ signed main(){
     return 0;
 }
 ```
-#### Dijkstra次短路
+#### *Dijkstra次短路*
 ```cpp
 typedef pair<int,int>P;
 const int INF=1e9+7;
@@ -627,7 +664,7 @@ void solve(){
 
 }
 ```
-#### Dijkstra路径还原
+#### *Dijkstra路径还原*
 ```cpp
 #include<bits/stdc++.h>
 using namespace std;
@@ -687,7 +724,7 @@ signed main() {
     return 0;
 }
 ```
-#### Kruskal
+#### *Kruskal*
 ```cpp
 const int N=500010;
 const int MAXE=500010;
@@ -759,8 +796,8 @@ void solve(){
     cout<<kruskal()<<'\n';
 }
 ```
-### 字符串
-#### Trie
+### **字符串**
+#### *Trie*
 ```cpp
 class Trie{
 public:
@@ -902,7 +939,7 @@ void solve2(){
     }
 }
 ```
-#### KMP
+#### *KMP*
 ```cpp
 class KMP{
 private:
@@ -936,7 +973,7 @@ public:
     }
 };
 ```
-#### 字符串哈希
+#### *字符串哈希*
 ```cpp
 using ull = unsigned long long;
 
@@ -962,8 +999,154 @@ public:
     }
 };
 ```
-### 数学
-#### FFT
+### **数学**
+#### *矩阵/矩阵快速幂*
+```cpp
+class Mat{
+public:
+    int n , m , P;
+    vector<vector<int> > pos;
+    Mat(const vector<vector<int> > & mat , const int & p = MOD) : n(mat.size()) , m(mat.empty() ? 0 : mat[0].size()) , pos(mat) , P(p) {}
+    Mat(const int & n , const int & m , const int & p = MOD) : n(n) , m(m) , P(p) { pos.assign(n , vector<int>(m , 0)); }
+
+    friend Mat operator*(const Mat & A , const Mat & B){
+        assert(A.m == B.n && A.P == B.P);
+        Mat res(A.n , B.m , A.P);
+        for(int i=0;i<A.n;++i){
+            for(int j=0;j<B.m;++j){
+                for(int k=0;k<A.m;++k){
+                    res.pos[i][j] = (res.pos[i][j] + A.pos[i][k] * B.pos[k][j] % A.P) % A.P;
+                }
+            }
+        }
+        return res;
+    }
+    friend Mat operator+(const Mat & A , const Mat & B){
+        assert(A.n == B.n && A.m == B.m && A.P == B.P);
+        Mat res(A.n, A.m, A.P);
+        for (int i=0;i<A.n;++i)for(int j=0;j<A.m;++j)res.pos[i][j] = (A.pos[i][j] + B.pos[i][j]) % A.P;
+        return res;
+    }
+    friend Mat operator*(const Mat & A , const int & x){
+        Mat res(A.n , A.m , A.P);
+        for(int i=0;i<A.n;++i)for(int j=0;j<A.m;++j)res.pos[i][j] = A.pos[i][j] * x % A.P;
+        return res;
+    }
+    friend Mat operator*(const int & x , const Mat & A){ return A * x; }
+
+    void set_identity(){ assert(n == m); for(int i=0;i<n;++i)pos[i][i] = 1; }
+    void set_zeros()   { for(int i=0;i<n;++i)for(int j=0;j<m;++j)pos[i][j] = 0; }
+    void mfpow(int x){
+        assert(n == m);
+        Mat A = *this , res(n , n , P); res.set_identity();
+        while(x){
+            if(x & 1)res = res * A;
+            A = A * A;
+            x >>= 1;
+        }
+        pos = res.pos;
+    }
+};
+```
+#### *阶乘，排列，组合及其逆元*
+```cpp
+class Comb{
+private:
+    int P;
+public:
+    vector<int> fact , invf;
+    Comb(int n , int p = MOD) : P(p) {
+        fact.assign(n + 1 , 1); invf.assign(n + 1 , 1);
+        for(int i=1;i<=n;++i)fact[i] = fact[i - 1] * i % P;
+        invf[n] = inv(fact[n] , P);
+        for(int i=n - 1;i>=1;--i)invf[i] = invf[i + 1] * (i + 1) % P;
+    }
+    int C(int M , int N){ return fact[M] % P * invf[N] % P * invf[M - N] % P; }
+    int A(int M , int N){ return fact[M] % P * invf[M - N] % P; }
+    int Q(int M , int N){ return fact[M] % P * inv(N , P) % P * invf[M - N] % P; };
+    int invC(int M , int N){ return inv(C(M , N) , P) % P; }
+    int invA(int M , int N){ return inv(A(M , N) , P) % P; }
+    int invQ(int M , int N){ return inv(Q(M , N) , P) % P; }
+};
+
+class Comb2{
+private:
+    int P;
+public:
+    vector<vector<int> > C;
+    Comb2(int n , int m , int p = MOD) : P(p) { // long long overflow when n > 66 without P
+        C.assign(n + 1 , vector<int>(m + 1 , 0));
+        for(int i=0;i<=n;++i)C[i][0] = 1;
+        for(int i=1;i<=n;++i)for(int j=1;j<=min(i , m);++j)C[i][j] = (C[i - 1][j - 1] + C[i - 1][j]) % P;
+    }
+};
+```
+#### *卡特兰数*
+
+$$ 
+H_{n} = \binom{2n}{n} - \binom{2n}{n - 1} = \frac{1}{n + 1} \binom{2n}{n} = \frac{4n - 2}{n + 1} H_{n - 1}
+$$
+
+```cpp
+// long long overflow when n > 18 without MOD
+```
+
+#### *错排数*
+```cpp
+class Derangement{
+private:
+    int P;
+public:
+    vector<int>D;
+    Derangement(int n , int p = MOD) : P(p) {
+        D.assign(n + 1 , 0);
+        D[0] = D[1] = 0; D[2] = 1;
+        for(int i=3;i<=n;++i)D[i] = (i  - 1) * (D[i - 1] + D[i - 2]) % P;
+    }
+};
+```
+#### *斯特林轮换数/子集数*
+```cpp
+class StirlingCycle{
+private:
+    int P;
+public:
+    vector<vector<int> > S;
+    StirlingCycle(int n , int m , int p = MOD) : P(p) { // long long overflow when n > 20 without MOD
+        S.assign(n + 1 , vector<int>(m + 1 , 0));
+        for(int i=0;i<=n;++i)S[i][0] = (i == 0);
+        for(int i=1;i<=n;++i)for(int j=1;j<=min(i , m);++j)S[i][j] = (S[i - 1][j - 1] % P + (i - 1) * S[i - 1][j] % P) % P;
+    }
+};
+
+
+class StirlingSubset{
+private:
+    int P;
+public:
+    vector<vector<int> > S;
+    StirlingSubset(int n , int m , int p = MOD) : P(p) { // long long overflow when n > 25 without MOD
+        S.assign(n + 1 , vector<int>(m + 1 , 0));
+        for(int i=0;i<=n;++i)S[i][0] = (i == 0);
+        for(int i=1;i<=n;++i)for(int j=1;j<=min(m , i);++j)S[i][j] = (S[i - 1][j - 1] % P + S[i - 1][j] * j % P) % P;
+    }
+};
+```
+#### *斯特林反演*
+
+$$\text{普通幂} \iff \text{下降幂}$$
+
+$$x^n = \sum_{k=0}^{n} {n \brace k} x^{\underline{k}} \iff x^{\underline{n}} = \sum_{k=0}^{n} (-1)^{n-k} {n \brack k} x^k$$
+
+$$f_n = \sum_{k=0}^{n} {n \brace k} g_k \iff g_n = \sum_{k=0}^{n} (-1)^{n-k} {n \brack k} f_k$$
+
+$$\text{普通幂} \iff \text{上升幂}$$
+
+$$x^n = \sum_{k=0}^{n} (-1)^{n-k} {n \brace k} x^{\overline{k}} \iff x^{\overline{n}} = \sum_{k=0}^{n} {n \brack k} x^k$$
+
+$$f_n = \sum_{k=0}^{n} (-1)^{n-k} {n \brace k} g_k \iff g_n = \sum_{k=0}^{n} {n \brack k} f_k$$
+
+#### *快速傅里叶变换*
 ```cpp
 using db = double;
 const db PI = acos(-1);
@@ -1009,7 +1192,7 @@ void IFFT(vector<complex<db> >& A , int n){
 }
 ```
 
-#### NTT
+#### *快速数论变换*
 ```cpp
 const int MOD = 998244353;
 const int G = 3;
@@ -1070,7 +1253,7 @@ vector<int> PolyMul(vector<int>& a, vector<int>& b){
 }
 ```
 
-#### 线性筛
+#### *线性筛*
 ```cpp
 class Sieve{
 public:
@@ -1091,7 +1274,7 @@ public:
     }
 };
 ```
-#### 乘法逆元/快速幂
+#### *乘法逆元/快速幂*
 ```cpp
 int fpow(int a , int n){
     int res = 1;
@@ -1103,8 +1286,8 @@ int fpow(int a , int n){
     return res;
 }
 
-int fpowMOD(int a , int n , int p){
-    int res = 1;
+int fpowMOD(int a , int n , int p = MOD){
+    int res = 1; a %= p;
     while(n){
         if(n & 1)res = res * a % p;
         a = a * a % p;
@@ -1113,14 +1296,10 @@ int fpowMOD(int a , int n , int p){
     return res;
 }
 
-void solve(){
-    int a , p;cin >> a >> p;
-    if(a % p)cout << fpowMOD(a , MOD - 2 , MOD) << '\n';
-}
-
+int inv(int x , int p = MOD){ return fpowMOD(x , p - 2 , p); }
 ```
-### 杂项
-#### i128
+### **杂项**
+#### *i128*
 ```cpp
 using i128 = __int128_t;
 
@@ -1143,7 +1322,7 @@ ostream &operator<<(ostream &os , i128 &n){
     return os << s;
 }
 ```
-#### 高精度
+#### *高精度*
 ```cpp
 const int MOD = 998244353;
 const int G = 3;
@@ -1346,7 +1525,7 @@ signed main() {
     return 0;
 }
 ```
-#### CMakelist
+#### *CMakelist*
 ```cmake
 cmake_minimum_required(VERSION 3.25)
 project(ICPC)
@@ -1363,7 +1542,7 @@ foreach(SRC ${SOURCES})
 endforeach()
 ```
 
-#### CompileScript
+#### *CompileScript*
 ```bash
 #!/bin/bash
 
