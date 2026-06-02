@@ -1084,7 +1084,7 @@ public:
 #### *卡特兰数*
 
 $$ 
-H_{n} = \binom{2n}{n} - \binom{2n}{n - 1} = \frac{1}{n + 1} \binom{2n}{n} = \frac{4n - 2}{n + 1} H_{n - 1}
+H_{n} = {2n \choose n} - {2n \choose n - 1} = \frac{1}{n + 1} {2n \choose n} = \frac{4n - 2}{n + 1} H_{n - 1}
 $$
 
 ```cpp
@@ -1145,6 +1145,15 @@ $$\text{普通幂} \iff \text{上升幂}$$
 $$x^n = \sum_{k=0}^{n} (-1)^{n-k} {n \brace k} x^{\overline{k}} \iff x^{\overline{n}} = \sum_{k=0}^{n} {n \brack k} x^k$$
 
 $$f_n = \sum_{k=0}^{n} (-1)^{n-k} {n \brace k} g_k \iff g_n = \sum_{k=0}^{n} {n \brack k} f_k$$
+
+#### *十二重计数法*
+
+| 小球 ($n$ 个) | 盒子 ($k$ 个) | 任意放 | 每个盒子至少 1 个 (非空) | 每个盒子至多 1 个 |
+| :--- | :--- | :--- | :--- | :--- |
+| **不同** | **不同** | $k^n$ | $k! \cdot {n \brace k}$ | $n^{\underline{k}}$ |
+| **相同** | **不同** | ${n+k-1 \choose k-1}$ | **隔板法**：${n-1\choose k-1}$ | ${k \choose n}$ |
+| **不同** | **相同** | $\sum_{i=1}^k { n \brace i}$ | **第二类斯特林数**：${n \brace k}$ | $[n \le k]$ |
+| **相同** | **相同** | $p(n, \le k)$ | **整数拆分**：$p(n-k, \le k)$ | $[n \le k]$ |
 
 #### *快速傅里叶变换*
 ```cpp
@@ -1542,7 +1551,17 @@ foreach(SRC ${SOURCES})
 endforeach()
 ```
 
-#### *CompileScript*
+#### *循环多线程优化*
+```cpp
+#pragma omp parallel for schedule(dynamic)
+for(int i=0;i<n;++i) // A loop with no self-dependency
+    // .......
+```
+```bash
+g++ -O3 -march=native -fopenmp main.cpp -o main
+```
+
+#### *编译脚本*
 ```bash
 #!/bin/bash
 
