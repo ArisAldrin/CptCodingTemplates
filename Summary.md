@@ -1283,6 +1283,51 @@ public:
     }
 };
 ```
+
+#### *欧拉函数（筛法/试除法）*
+性质 1： 设 $p$ 为质数，则 $\varphi(p) = p - 1$
+
+性质 2： 设 $p$ 为质数，则 $\varphi(p^k) = (p-1) , p^{k-1}$
+
+性质 3：若 $\gcd(m,n) = 1$，则 $\varphi(mn) = \varphi(m) \varphi(n)$
+```cpp
+class Phi{
+public:
+    vector<bool> vs;
+    vector<int> pm , pos;
+    Phi(int n){
+        vs.assign(n + 1 , false); pos.assign(n + 1 , 0);
+        pos[1] = 1;
+        for(int i=2;i<=n;++i){
+            if(!vs[i]){
+                pm.push_back(i);
+                pos[i] = i - 1;
+            }
+            for(int j=0;pm[j] * i <= n;++j){
+                vs[pm[j] * i] = true;
+                if(i % pm[j] == 0){
+                    pos[pm[j] * i] =  pos[i] * pm[j];
+                    break;
+                }else{
+                    pos[pm[j] * i] = (pm[j] - 1) * pos[i];
+                }
+            }
+        }
+    }
+};
+
+int single_phi(int n){
+    int res = n;
+    for(int i=2;i * i <= n;++i){
+        if(n % i == 0){
+            res = res / i * (i - 1);
+            while(n % i == 0)n /= i;
+        }
+    }
+    if(n > 1)res = res / n * (n - 1);
+    return res;
+}
+```
 #### *乘法逆元/快速幂*
 ```cpp
 int fpow(int a , int n){
@@ -1532,6 +1577,123 @@ signed main() {
     BigInt a,b;cin >> a >> b;
     cout << a * b << '\n';
     return 0;
+}
+```
+
+#### *对拍*
+##### 与标准/暴力解对比（Linux）
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+void solve(){
+    int t = 0;
+    chdir("Executable");
+    while(1){
+        cout << "Test" << ++t << ": ";
+        system("./gen > gen.in");
+        system("./std < gen.in > std.out");
+        system("./my < gen.in > my.out");
+        if(system("diff -Z std.out my.out > dif.log")){
+            cout << "WA" << '\n';
+            cout << "Input:\n"; system("cat gen.in");
+            cout << "Answer:\n"; system("cat std.out");
+            cout << "My:\n"; system("cat my.out");
+            break;
+        }
+        cout << "AC" << '\n';
+    }
+}
+```
+##### 检测条件是否成立（Linux）
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+bool OK(){
+    ifstream myin("my.out") , gin("gen.in") , stin("std.out");
+    ofstream fout("my.out" , ios::app);
+}
+
+void solve(){
+    int t = 0;
+    chdir("Executable");
+    while(1){
+        cout << "Test" << ++t << ": ";
+        system("./gen > gen.in");
+        system("./my < gen.in > my.out");
+        if(!OK()){
+            cout << "WA" << '\n';
+            cout << "Input:\n"; system("cat gen.in");
+            cout << "My:\n"; system("cat my.out");
+            break;
+        }
+        cout << "AC" << '\n';
+    }
+}
+```
+##### 与标准/暴力解对比（Windows）
+```cpp
+#include <bits/stdc++.h>
+#include <direct.h> // needed when switch directory in windows
+using namespace std;
+void solve(){
+    int t = 0;
+    _chdir("Executable");
+    while(1){
+        cout << "Test " << ++ t << ": ";
+        system("gen.exe > gen.in");
+        system("std.exe < gen.in > std.out");
+        system("my.exe < gen.in > my.out");
+        if(system("fc std.out my.out > dif.log")){
+            cout << "WA" << '\n';
+            cout << "Input:\n"; system("type gen.in");
+            cout << "Answer:\n"; system("type std.out");
+            cout << "My:\n"; system("type my.out");
+            break;
+        }
+        cout << "AC" << '\n';
+    }
+}
+```
+##### 检测条件是否成立（Windows）
+```cpp
+#include <bits/stdc++.h>
+#include <direct.h> // needed when switch directory in windows
+using namespace std;
+bool OK(){
+    ifstream myin("my.out") , gin("gen.in") , stin("std.out");
+    ofstream fout("my.out" , ios::app);
+    // conditions ...
+}
+
+void solve(){
+    int t = 0;
+    _chdir("Executable");
+    while(1){
+        cout << "Test" << ++t << ": ";
+        system("gen.exe > gen.in");
+        system("my.exe < gen.in > my.out");
+        if(!OK()){
+            cout << "WA" << '\n';
+            cout << "Input:\n"; system("type gen.in");
+            cout << "My:\n"; system("type my.out");
+            break;
+        }
+        cout << "AC" << '\n';
+    }
+}
+```
+##### 随机输入生成
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+mt19937 rdint(time(0));
+mt19937_64 rdll(time(0));
+int rgint(int l , int r){
+    uniform_int_distribution<int> dis(l, r);
+    return dis(rdint);
+}
+void solve(){
+    
 }
 ```
 #### *CMakelist*
