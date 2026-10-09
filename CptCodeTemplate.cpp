@@ -17,7 +17,6 @@
 #define int long long
 
 using namespace std;
-using ull = unsigned long long;
 using db = double;
 using pii = pair<int , int>;
 using piii = arr<int , 3>;

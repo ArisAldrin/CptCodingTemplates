@@ -34,14 +34,14 @@ const db PI = acos(-1);
 mt19937 rdint(time(0));
 mt19937_64 rdll(time(0));
 
-class Tag{
+class LazyTag{
 public:
     // Member Variable ...
-    Tag() {}
+    LazyTag() {}
     bool empty() const {
         // How is the Tag empty ...
     }
-    void apply(const Tag &t) & {
+    void apply(const LazyTag &t) & {
         // Tag merge ...
     }
 };
@@ -50,27 +50,27 @@ class Info{
 public:
     // Member Variable ...
     Info() {}
-    void apply(const Tag &t) & {
+    void apply(const LazyTag &t) & {
         // How Tag apply to the data ...
     }
 };
 
-Info operator+(const Info &a, const Info &b){
+Info operator+(const Info & a, const Info & b){
     Info res;
     // Segment Merge ...
     return res;
 }
 
-template<class Info, class Tag>
-class LazySegmentTree{
+template<class Info, class LazyTag>
+class LST{
 public:
     int n;
     vector<Info> info;
-    vector<Tag> tag;
+    vector<LazyTag> tag;
 
-    LazySegmentTree(int n_) : n(n_) {
+    LST(int n_) : n(n_) {
         info.assign(4 * n + 1, Info());
-        tag.assign(4 * n + 1, Tag());
+        tag.assign(4 * n + 1, LazyTag());
     }
 
     template<class T>
@@ -89,7 +89,7 @@ public:
         info[p] = info[2 * p] + info[2 * p + 1];
     }
 
-    void apply(int p, const Tag &v) {
+    void apply(int p, const LazyTag &v) {
         info[p].apply(v);
         tag[p].apply(v);
     }
@@ -98,47 +98,47 @@ public:
         if (tag[p].empty()) return;
         apply(2 * p, tag[p]);
         apply(2 * p + 1, tag[p]);
-        tag[p] = Tag();
+        tag[p] = LazyTag();
     }
 
-    void modify(int p, int l, int r, int x, const Info &v) {
+    void dotchg(int p, int l, int r, int x, const Info &v) {
         if (l == r) {
             info[p] = v;
             return;
         }
         int m = (l + r) / 2;
         push(p);
-        if (x <= m) modify(2 * p, l, m, x, v);
-        else modify(2 * p + 1, m + 1, r, x, v);
+        if (x <= m) dotchg(2 * p, l, m, x, v);
+        else dotchg(2 * p + 1, m + 1, r, x, v);
         pull(p);
     }
 
-    Info rangeQuery(int p, int l, int r, int x, int y) {
+    Info askrg(int p, int l, int r, int x, int y) {
         if (l >= x && r <= y) return info[p];
         int m = (l + r) / 2;
         push(p);
-        if (y <= m) return rangeQuery(2 * p, l, m, x, y);
-        if (x > m) return rangeQuery(2 * p + 1, m + 1, r, x, y);
-        return rangeQuery(2 * p, l, m, x, y) + rangeQuery(2 * p + 1, m + 1, r, x, y);
+        if (y <= m) return askrg(2 * p, l, m, x, y);
+        if (x > m) return askrg(2 * p + 1, m + 1, r, x, y);
+        return askrg(2 * p, l, m, x, y) + askrg(2 * p + 1, m + 1, r, x, y);
     }
 
-    void rangeApply(int p, int l, int r, int x, int y, const Tag &v) {
+    void rgchg(int p, int l, int r, int x, int y, const LazyTag &v) {
         if (l >= x && r <= y) {
             apply(p, v);
             return;
         }
         int m = (l + r) / 2;
         push(p);
-        if (x <= m) rangeApply(2 * p, l, m, x, y, v);
-        if (y > m) rangeApply(2 * p + 1, m + 1, r, x, y, v);
+        if (x <= m) rgchg(2 * p, l, m, x, y, v);
+        if (y > m) rgchg(2 * p + 1, m + 1, r, x, y, v);
         pull(p);
     }
     
     template<class T>
     void build(const vector<T>& a) { build(a, 1, 1, n); }
-    void modify(int x, const Info &v) { modify(1, 1, n, x, v); }
-    Info rangeQuery(int l, int r) { return rangeQuery(1, 1, n, l, r); }
-    void rangeApply(int l, int r, const Tag &v) { rangeApply(1, 1, n, l, r, v); }
+    void dotchg(int x, const Info &v) { dotchg(1, 1, n, x, v); }
+    Info askrg(int l, int r) { return askrg(1, 1, n, l, r); }
+    void rgchg(int l, int r, const LazyTag &v) { rgchg(1, 1, n, l, r, v); }
 };
 
 void solve(){
