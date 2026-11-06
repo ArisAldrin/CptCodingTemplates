@@ -19,6 +19,7 @@ public:
     friend PT operator-(const PT & a , const PT & b){ return PT(a.fs - b.fs , a.sc - b.sc); }
     friend PT operator*(const db & t , const PT & a){ return PT(t * a.fs , t * a.sc); }
     friend PT operator*(const PT & a , const db & t){ return PT(t * a.fs , t * a.sc); }
+    friend PT operator/(const PT & a , const db & t){ return PT(a.fs / 2 , a.sc / 2); }
     friend db operator*(const PT & a , const PT & b){ return a.fs * b.sc - a.sc * b.fs; } // cross
     friend db operator%(const PT & a , const PT & b){ return a.fs * b.fs + a.sc * b.sc; } // dot
 
