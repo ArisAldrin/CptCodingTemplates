@@ -13,7 +13,7 @@ public:
 };
 
 bool chk(LN a , LN b , LN c){
-    PT p = GetIntsct(a.p , a.d , b.p , b.d);
+    PT p = getIntsct(a.p , a.d , b.p , b.d);
     return c.d * (p - c.p) < -EPS;
 }
 
@@ -30,7 +30,7 @@ vector<PT> HalfPlaneIntersecion(vector<LN>& L){
     while(q.size() > 1 && chk(q.front() , q[1] , q.back()))q.pop_front();
     if(q.size() < 3) return {};
     vector<PT> ans;
-    for(int i=0;i<(int)q.size() - 1;++i)ans.push_back(GetIntsct(q[i].p, q[i].d , q[i + 1].p , q[i + 1].d));
-    ans.push_back(GetIntsct(q.back().p , q.back().d , q.front().p , q.front().d));
+    for(int i=0;i<(int)q.size() - 1;++i)ans.push_back(getIntsct(q[i].p, q[i].d , q[i + 1].p , q[i + 1].d));
+    ans.push_back(getIntsct(q.back().p , q.back().d , q.front().p , q.front().d));
     return ans;
 }

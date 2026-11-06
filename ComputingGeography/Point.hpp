@@ -19,7 +19,7 @@ public:
     friend PT operator-(const PT & a , const PT & b){ return PT(a.fs - b.fs , a.sc - b.sc); }
     friend PT operator*(const db & t , const PT & a){ return PT(t * a.fs , t * a.sc); }
     friend PT operator*(const PT & a , const db & t){ return PT(t * a.fs , t * a.sc); }
-    friend PT operator/(const PT & a , const db & t){ return PT(a.fs / 2 , a.sc / 2); }
+    friend PT operator/(const PT & a , const db & t){ return PT(a.fs / t , a.sc / t); }
     friend db operator*(const PT & a , const PT & b){ return a.fs * b.sc - a.sc * b.fs; } // cross
     friend db operator%(const PT & a , const PT & b){ return a.fs * b.fs + a.sc * b.sc; } // dot
 
@@ -28,7 +28,7 @@ public:
     db dis(PT & b){ return sqrt(1.0 * (b.fs - fs) * (b.fs - fs) + (b.sc -sc) * (b.sc - sc)); }
 };
 
-PT GetIntsct(PT a , PT DA , PT b , PT DB){ // point ---direction---> 
+PT getIntsct(PT a , PT DA , PT b , PT DB){ // point ---direction---> 
     db ratio = (a - b) * DB / (DB * DA);
     return a + DA * ratio;
 }
